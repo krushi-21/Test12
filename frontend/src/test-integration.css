@@ -1,0 +1,540 @@
+/* Shared /test visual integration layer. Feature-route rules below exclude the
+   homepage; shared palette tokens and explicit header overrides integrate the
+   homepage without taking ownership of its markup or hero implementation. */
+.test-site {
+  --test-ink: #20243a;
+  --test-navy: #18233f;
+  --test-navy-deep: #111a31;
+  --test-muted: #73747d;
+  --test-line: #e4dfd7;
+  --test-line-strong: #d3cbc0;
+  --test-paper: #f7f5ef;
+  --test-surface: #fffdfa;
+  --test-surface-soft: #f1eee7;
+  --test-terracotta: #b96b52;
+  --test-terracotta-deep: #99543f;
+  --test-shadow: 0 12px 30px rgba(24, 35, 63, .07);
+}
+
+.test-site:not(:has(.test-homepage)) {
+  --canvas: var(--test-paper);
+  --surface: var(--test-surface);
+  --surface-soft: var(--test-surface-soft);
+  --forest: var(--test-navy);
+  --forest-deep: var(--test-navy-deep);
+  --ink: var(--test-ink);
+  --secondary: #555967;
+  --muted: var(--test-muted);
+  --line: var(--test-line);
+  --line-dark: var(--test-line-strong);
+  --marigold: var(--test-terracotta);
+  --shadow-soft: var(--test-shadow);
+
+  color: var(--test-ink);
+  background: var(--test-paper);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.test-site:not(:has(.test-homepage)) .test-mode-banner {
+  color: #42382f;
+  background: #f3ede3;
+  border-bottom-color: #e4d9c9;
+}
+
+.test-site:not(:has(.test-homepage)) .test-mode-banner span {
+  color: #655c54;
+}
+
+.test-site:not(:has(.test-homepage)) .test-topbar {
+  background: var(--test-navy);
+  border-bottom-color: rgba(255, 255, 255, .14);
+  box-shadow: 0 5px 18px rgba(17, 26, 49, .12);
+}
+
+.test-site:not(:has(.test-homepage)) .test-topbar-inner {
+  width: min(1280px, calc(100% - 48px));
+}
+
+.test-site:not(:has(.test-homepage)) .test-wordmark,
+.test-site:not(:has(.test-homepage)) .test-nav-link {
+  color: #fffdfa;
+}
+
+.test-site:not(:has(.test-homepage)) .test-wordmark span {
+  color: #fffdfa;
+  background: var(--test-terracotta);
+}
+
+.test-site:not(:has(.test-homepage)) .test-nav-link {
+  opacity: .84;
+}
+
+.test-site:not(:has(.test-homepage)) .test-nav-link:hover,
+.test-site:not(:has(.test-homepage)) .test-nav-link:focus-visible {
+  color: #fffdfa;
+  opacity: 1;
+  text-decoration-color: #e2ad98;
+}
+
+.test-site:not(:has(.test-homepage)) .test-static-link {
+  color: #f2c7b6;
+}
+
+.test-site:not(:has(.test-homepage)) .test-static-link:hover {
+  color: #fffdfa;
+}
+
+.test-site:not(:has(.test-homepage)) .test-feature-nav {
+  border-bottom-color: var(--test-line);
+  background: rgba(255, 253, 250, .98);
+}
+
+.test-site:not(:has(.test-homepage)) .test-feature-nav a {
+  border-color: var(--test-line);
+  color: #4e5361;
+  background: var(--test-surface);
+  transition: border-color .16s ease, color .16s ease, background .16s ease;
+}
+
+.test-site:not(:has(.test-homepage)) .test-feature-nav a:hover,
+.test-site:not(:has(.test-homepage)) .test-feature-nav a:focus-visible {
+  border-color: #c98a73;
+  color: var(--test-terracotta-deep);
+  background: #fbf3ee;
+}
+
+.test-site:not(:has(.test-homepage)) .test-main {
+  background: var(--test-paper);
+}
+
+.test-site:not(:has(.test-homepage)) .test-content-width {
+  width: min(1180px, calc(100% - 48px));
+}
+
+.test-site:not(:has(.test-homepage)) .test-footer {
+  padding-right: max(24px, calc((100% - 1180px) / 2));
+  padding-left: max(24px, calc((100% - 1180px) / 2));
+  border-top-color: var(--test-line);
+  color: var(--test-muted);
+  background: #f3f0e9;
+}
+
+.test-site:not(:has(.test-homepage)) :is(h1, h2, h3) {
+  color: var(--test-ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 500;
+  letter-spacing: -.035em;
+}
+
+.test-site:not(:has(.test-homepage)) .test-page-heading {
+  margin-bottom: 26px;
+}
+
+.test-site:not(:has(.test-homepage)) .test-page-heading > span,
+.test-site:not(:has(.test-homepage)) .test-eyebrow {
+  color: var(--test-terracotta);
+}
+
+.test-site:not(:has(.test-homepage)) .test-page-heading h1,
+.test-site:not(:has(.test-homepage)) .test-detail-copy h1 {
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.04;
+  letter-spacing: -.045em;
+}
+
+.test-site:not(:has(.test-homepage)) .test-page-heading p,
+.test-site:not(:has(.test-homepage)) .test-detail-copy > p {
+  color: #62636c;
+}
+
+.test-site:not(:has(.test-homepage)) .test-section-heading h2 {
+  font-size: clamp(20px, 2.2vw, 25px);
+}
+
+.test-site:not(:has(.test-homepage)) .test-field input,
+.test-site:not(:has(.test-homepage)) .test-field select,
+.test-site:not(:has(.test-homepage)) .test-reset-row input,
+.test-site:not(:has(.test-homepage)) .test-launch-edit-form textarea,
+.test-site:not(:has(.test-homepage)) .test-main input,
+.test-site:not(:has(.test-homepage)) .test-main select,
+.test-site:not(:has(.test-homepage)) .test-main textarea {
+  border-color: var(--test-line-strong);
+  color: var(--test-ink);
+  background: var(--test-surface);
+}
+
+.test-site:not(:has(.test-homepage)) .test-field input:focus,
+.test-site:not(:has(.test-homepage)) .test-field select:focus,
+.test-site:not(:has(.test-homepage)) .test-reset-row input:focus,
+.test-site:not(:has(.test-homepage)) .test-main input:focus-visible,
+.test-site:not(:has(.test-homepage)) .test-main select:focus-visible,
+.test-site:not(:has(.test-homepage)) .test-main textarea:focus-visible {
+  border-color: var(--test-terracotta);
+  outline: 3px solid rgba(185, 107, 82, .2);
+  outline-offset: 1px;
+}
+
+.test-site:not(:has(.test-homepage)) .test-button-primary,
+.test-site:not(:has(.test-homepage)) .button-primary {
+  border-color: var(--test-terracotta);
+  color: #fffdfa;
+  background: var(--test-terracotta);
+}
+
+.test-site:not(:has(.test-homepage)) .test-button-primary:hover:not(:disabled),
+.test-site:not(:has(.test-homepage)) .button-primary:hover:not(:disabled) {
+  border-color: var(--test-terracotta-deep);
+  background: var(--test-terracotta-deep);
+}
+
+.test-site:not(:has(.test-homepage)) .test-button-secondary,
+.test-site:not(:has(.test-homepage)) .button-secondary {
+  border-color: var(--test-line-strong);
+  color: var(--test-navy);
+  background: var(--test-surface);
+}
+
+.test-site:not(:has(.test-homepage)) .test-button-secondary:hover:not(:disabled),
+.test-site:not(:has(.test-homepage)) .button-secondary:hover:not(:disabled) {
+  border-color: #bd846f;
+  color: var(--test-terracotta-deep);
+  background: #fbf4ef;
+}
+
+.test-site:not(:has(.test-homepage)) :is(.test-launch-card, .test-detail-image, .test-engagement-panel, .test-brand-hero, .test-rank-list li, .test-form-card, .test-seed-accounts, .test-session-card, .test-workspace-card, .test-outbox, .test-product-card) {
+  border-color: var(--test-line);
+  border-radius: 15px;
+  background-color: var(--test-surface);
+  box-shadow: var(--test-shadow);
+}
+
+.test-site:not(:has(.test-homepage)) .test-launch-image,
+.test-site:not(:has(.test-homepage)) .test-detail-image,
+.test-site:not(:has(.test-homepage)) .test-product-card > img {
+  background: #eee9df;
+}
+
+.test-site:not(:has(.test-homepage)) .test-brand-hero img,
+.test-site:not(:has(.test-homepage)) .test-launch-image img,
+.test-site:not(:has(.test-homepage)) .test-detail-image img,
+.test-site:not(:has(.test-homepage)) .test-product-card > img {
+  object-fit: cover;
+}
+
+.test-site:not(:has(.test-homepage)) .test-chips span,
+.test-site:not(:has(.test-homepage)) .tag-category {
+  color: #655044;
+  background: #f2e8df;
+}
+
+.test-site:not(:has(.test-homepage)) .test-notice {
+  border-color: var(--test-line);
+  color: #555967;
+  background: var(--test-surface);
+}
+
+.test-site:not(:has(.test-homepage)) .test-notice-success {
+  border-color: #c4d4c5;
+  color: #3d6244;
+  background: #f0f5ee;
+}
+
+.test-site:not(:has(.test-homepage)) .test-notice-error {
+  border-color: #e4c4b9;
+  color: #8b4735;
+  background: #fcf2ee;
+}
+
+.test-site:not(:has(.test-homepage)) :focus-visible {
+  outline-color: var(--test-terracotta);
+}
+
+.test-site:not(:has(.test-homepage)) ::selection {
+  color: #fffdfa;
+  background: var(--test-navy);
+}
+
+@media (min-width: 1024px) {
+  .test-site:not(:has(.test-homepage)) .test-feature-nav {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    overflow-y: visible;
+    justify-content: flex-start;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
+@media (max-width: 760px) {
+  .test-site:not(:has(.test-homepage)) .test-topbar-inner {
+    width: calc(100% - 28px);
+  }
+
+  .test-site:not(:has(.test-homepage)) .test-content-width {
+    width: calc(100% - 32px);
+  }
+}
+
+/* Homepage header integration: JSX, route destinations, and hero remain owned
+   by test-homepage.tsx; this layer owns only shared tokens and header styling. */
+.test-site:has(.home-site-header) .test-homepage {
+  --aarambh-ink: var(--test-navy);
+  --aarambh-text: var(--test-ink);
+  --aarambh-saffron: #d6a438;
+  --aarambh-coral: var(--test-terracotta);
+  --aarambh-sage: #748879;
+  --aarambh-border: var(--test-line);
+  --aarambh-soft: var(--test-paper);
+  --aarambh-surface: var(--test-surface);
+  color: var(--test-ink);
+  background: var(--test-surface);
+}
+
+.test-site:has(.home-site-header) > .test-main,
+.test-site:has(.home-site-header) .home-site-header {
+  background: var(--test-surface);
+}
+
+.test-site:has(.home-site-header) .home-site-header {
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+  background: var(--test-navy);
+  box-shadow: 0 6px 20px rgba(17, 26, 49, .12);
+}
+
+.test-site:has(.home-site-header) .home-topbar-inner {
+  width: min(1800px, calc(100% - 96px));
+  min-height: 68px;
+  gap: clamp(10px, 1.25vw, 20px);
+}
+
+.test-site:has(.home-site-header) .home-wordmark {
+  font-size: 16px;
+  color: #fffdfa;
+  letter-spacing: .13em;
+}
+
+.test-site:has(.home-site-header) .home-primary-nav {
+  gap: clamp(8px, .85vw, 12px);
+}
+
+.test-site:has(.home-site-header) .home-primary-nav a {
+  font-size: 11px;
+}
+
+.test-site:has(.home-site-header) .home-primary-nav a,
+.test-site:has(.home-site-header) .home-account-link {
+  color: rgba(255, 253, 250, .9);
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease;
+}
+
+.test-site:has(.home-site-header) .home-primary-nav a:hover,
+.test-site:has(.home-site-header) .home-primary-nav a:focus-visible,
+.test-site:has(.home-site-header) .home-account-link:hover,
+.test-site:has(.home-site-header) .home-account-link:focus-visible {
+  color: #f2c7b6;
+}
+
+.test-site:has(.home-site-header) .home-search {
+  min-width: 170px;
+  flex-basis: 330px;
+  border-color: rgba(255, 253, 250, .2);
+  border-radius: 8px;
+  color: rgba(255, 253, 250, .74);
+  background: rgba(255, 253, 250, .08);
+}
+
+.test-site:has(.home-site-header) .home-search:focus-within {
+  border-color: #dca28c;
+  box-shadow: 0 0 0 3px rgba(185, 107, 82, .2);
+}
+
+.test-site:has(.home-site-header) .home-search input {
+  color: #fffdfa;
+}
+
+.test-site:has(.home-site-header) .home-search input::placeholder {
+  color: rgba(255, 253, 250, .66);
+}
+
+.test-site:has(.home-site-header) .home-search button {
+  color: #fffdfa;
+  background: var(--test-terracotta);
+  transition: background-color .16s ease;
+}
+
+.test-site:has(.home-site-header) .home-search button:hover:not(:disabled) {
+  background: var(--test-terracotta-deep);
+}
+
+.test-site:has(.home-site-header) .home-location-control {
+  border-color: rgba(255, 253, 250, .22);
+  border-radius: 8px;
+  background: rgba(255, 253, 250, .05);
+}
+
+.test-site:has(.home-site-header) .home-location-control > svg {
+  color: #e6ad96;
+}
+
+.test-site:has(.home-site-header) .home-account-link {
+  min-height: 38px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 253, 250, .22);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.test-site:has(.home-site-header) .home-account-link:hover,
+.test-site:has(.home-site-header) .home-account-link:focus-visible {
+  border-color: rgba(242, 199, 182, .65);
+  background: rgba(255, 253, 250, .06);
+}
+
+.test-site:has(.home-site-header) :is(.home-search, .home-location-control, .home-account-link):focus-visible,
+.test-site:has(.home-site-header) .home-location-control select:focus-visible {
+  outline: 2px solid #e6ad96;
+  outline-offset: 2px;
+}
+
+.test-site:has(.home-site-header) .home-hero-visual {
+  border: 1px solid var(--test-line);
+  box-shadow: 0 10px 26px rgba(24, 35, 63, .09);
+}
+
+.test-site:has(.home-site-header) .home-hero-caption {
+  border-color: rgba(255, 253, 250, .72);
+  color: #fffdfa;
+  background: var(--test-terracotta);
+}
+
+.test-site:has(.home-site-header) .home-launch-cta {
+  border-color: var(--test-terracotta);
+  background: var(--test-terracotta);
+}
+
+.test-site:has(.home-site-header) .home-launch-cta:hover {
+  border-color: var(--test-terracotta-deep);
+  background: var(--test-terracotta-deep);
+}
+
+@media (max-width: 1200px) {
+  .test-site:has(.home-site-header) .home-topbar-inner {
+    width: calc(100% - 56px);
+    gap: 10px;
+  }
+
+  .test-site:has(.home-site-header) .home-primary-nav {
+    gap: 10px;
+  }
+
+  .test-site:has(.home-site-header) .home-search {
+    flex-basis: 230px;
+  }
+}
+
+@media (max-width: 940px) {
+  .test-site:has(.home-site-header) .home-topbar-inner {
+    gap: 8px;
+  }
+
+  .test-site:has(.home-site-header) .home-search {
+    min-width: 145px;
+    flex-basis: 175px;
+  }
+}
+
+@media (max-width: 760px) {
+  .test-site:has(.home-site-header) .home-topbar-inner {
+    width: calc(100% - 32px);
+  }
+
+  .test-site:has(.home-site-header) .home-search {
+    min-width: 0;
+    flex-basis: auto;
+  }
+}
+
+
+/* The shared app shell owns branding, route navigation, and account access.
+   The homepage keeps only its existing search and city-picker utility row. */
+.test-site:has(.home-site-header) .test-main {
+  min-height: calc(100svh - 38px);
+  padding: 0 0 34px;
+  background: var(--test-surface);
+}
+
+.test-site:has(.home-site-header) .home-site-header {
+  border-bottom: 1px solid var(--test-line);
+  background: var(--test-surface);
+  box-shadow: none;
+}
+
+.test-site:has(.home-site-header) .home-topbar-inner {
+  width: min(1320px, calc(100% - 64px));
+  min-height: 62px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.test-site:has(.home-site-header) .home-topbar-inner .home-wordmark { display: none; }
+.test-site:has(.home-site-header) .home-topbar-inner .home-search {
+  min-width: 0;
+  max-width: 760px;
+  margin: 0 auto 0 0;
+  flex: 1 1 520px;
+  border-color: var(--test-line);
+  background: #fff;
+}
+.test-site:has(.home-site-header) .home-topbar-inner .home-header-tools { margin-left: auto; }
+.test-site:has(.home-site-header) .home-topbar-inner .home-header-tools .home-account-link { display: none; }
+.test-site:has(.home-site-header) .home-topbar-inner .home-location-control {
+  min-height: 38px;
+  border-color: var(--test-line);
+  background: #fff;
+}
+.test-site:has(.home-site-header) .home-topbar-inner .home-location-control > svg { color: var(--test-terracotta); }
+.test-site:has(.home-site-header) .home-topbar-inner .home-location-control select { color: var(--test-ink); }
+.test-site:has(.home-site-header) .home-topbar-inner .home-location-control select option { color: var(--test-ink); background: #fff; }
+.test-site:has(.home-site-header) .home-mobile-tabs { display: none; }
+
+@media (max-width: 900px) {
+  .test-site:has(.home-site-header) .home-topbar-inner {
+    width: min(100% - 32px, 760px);
+    min-height: 58px;
+    gap: 9px;
+  }
+  .test-site:has(.home-site-header) .home-topbar-inner .home-search { flex-basis: 360px; }
+}
+
+@media (max-width: 560px) {
+  .test-site:has(.home-site-header) .home-topbar-inner {
+    width: calc(100% - 28px);
+    min-height: 54px;
+    padding: 8px 0;
+    gap: 7px;
+  }
+  .test-site:has(.home-site-header) .home-topbar-inner .home-search {
+    min-height: 38px;
+    max-width: none;
+    flex: 1 1 0;
+    padding-left: 8px;
+  }
+  .test-site:has(.home-site-header) .home-topbar-inner .home-search > svg { width: 15px; height: 15px; }
+  .test-site:has(.home-site-header) .home-topbar-inner .home-search input { min-width: 0; font-size: 10px; }
+  .test-site:has(.home-site-header) .home-topbar-inner .home-header-tools { margin: 0; }
+  .test-site:has(.home-site-header) .home-topbar-inner .home-location-control { min-height: 34px; padding: 0 6px; }
+  .test-site:has(.home-site-header) .home-topbar-inner .home-location-control select { max-width: 76px; min-height: 30px; font-size: 9px; }
+  .test-site:has(.home-site-header) .test-homepage > .test-content-width { width: calc(100% - 28px); padding-top: 0; }
+}
+
+@media (max-width: 900px) {
+  .test-site:has(.home-site-header) .test-shell-content > .test-main {
+    padding-bottom: calc(62px + env(safe-area-inset-bottom) + 20px);
+  }
+
+  .test-site:has(.home-site-header) .home-mobile-tabs {
+    display: none;
+  }
+}

@@ -1,0 +1,27 @@
+# Local credentials and environment files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Installed dependencies and generated build/cache output
+**/node_modules/
+frontend/dist/
+frontend/.wrangler/
+frontend/test-artifacts/
+**/coverage/
+**/.cache/
+**/*.log
+
+# Local backend state and uploaded preview data
+backend/data/
+backend/.local-mail/
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+
+# Generated visual QA screenshots (the app's runtime assets are under public/ and src/)
+/frontend/brand-profile-mobile.png
+/frontend/founder-profile-mobile.png
+/frontend/launch-detail-mobile.png
+/frontend/leaderboard-mobile.png
+/frontend/mobile-first-viewport.png
+/frontend/preview-homepage.png

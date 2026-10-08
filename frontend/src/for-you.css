@@ -1,0 +1,57 @@
+.test-for-you-page { gap: 16px; }
+.test-for-you-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #dedbd4;
+  border-radius: 12px;
+  background: #fffdfa;
+}
+.test-for-you-filters .test-field { min-width: 0; }
+.test-for-you-filters .test-field span { display: block; margin-bottom: 5px; color: #555967; font-size: 11px; font-weight: 700; }
+.test-for-you-filters input,
+.test-for-you-filters select {
+  width: 100%;
+  min-height: 39px;
+  padding: 8px 10px;
+  border: 1px solid #d3cbc0;
+  border-radius: 8px;
+  color: #20243a;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+}
+.test-for-you-filters .test-button { min-height: 39px; white-space: nowrap; }
+.test-for-you-ranking {
+  display: grid;
+  gap: 4px;
+  padding: 13px 15px;
+  border: 1px solid #c9d7d0;
+  border-radius: 10px;
+  color: #243e35;
+  background: #f0f6f1;
+  font-size: 12px;
+}
+.test-for-you-ranking strong { font-size: 13px; }
+.test-for-you-ranking.is-cold-start { border-color: #e4d5bd; color: #64503a; background: #faf4e9; }
+.test-for-you-list { display: grid; gap: 14px; }
+.test-for-you-item { min-width: 0; display: grid; gap: 8px; }
+.test-for-you-reason { margin: 0; padding: 9px 12px; display: flex; flex-wrap: wrap; gap: 5px 9px; border-left: 3px solid #b96b52; border-radius: 0 8px 8px 0; color: #535663; background: #f6f0eb; font-size: 12px; }
+.test-for-you-reason strong { color: #713f31; }
+.test-for-you-loading { min-height: 52px; display: flex; align-items: center; }
+.test-for-you-empty { display: grid; gap: 5px; padding: 18px; }
+.test-for-you-empty strong { color: #20243a; font-size: 15px; }
+.test-for-you-empty span { line-height: 1.5; }
+.test-for-you-error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.test-for-you-load-more { justify-self: center; }
+.test-for-you-discover-link { justify-self: start; }
+@media (max-width: 760px) {
+  .test-for-you-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .test-for-you-filters .test-button { grid-column: 1 / -1; }
+}
+@media (max-width: 460px) {
+  .test-for-you-filters { grid-template-columns: minmax(0, 1fr); }
+  .test-for-you-filters .test-button { grid-column: 1; }
+}

@@ -1,0 +1,46 @@
+.test-public-collections { display: grid; gap: 12px; }
+.test-public-collections > .test-section-heading { align-items: end; margin-bottom: 0; }
+.test-public-collections > .test-section-heading h2,
+.test-collection-management > .test-section-heading h2 { margin: 3px 0 0; color: #20243a; font: 500 clamp(21px, 2.3vw, 28px)/1.1 Georgia, 'Times New Roman', serif; letter-spacing: -.035em; }
+.test-public-collections-intro { max-width: 680px; margin: -3px 0 2px; color: #73747d; font-size: 12px; line-height: 1.55; }
+.test-public-collection-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.test-public-collection-card { min-width: 0; overflow: hidden; border: 1px solid #e4dfd7; border-radius: 12px; background: #fffdfa; box-shadow: 0 8px 22px rgba(24, 35, 63, .045); }
+.test-public-collection-image { position: relative; height: 150px; overflow: hidden; display: grid; place-items: center; color: #20243a; background: #f1eee7; text-decoration: none; }
+.test-public-collection-image > img { width: 100%; height: 100%; display: block; object-fit: cover; transition: transform .2s ease; }
+.test-public-collection-image:hover > img { transform: scale(1.035); }
+.test-public-collection-image > span:first-child:not(.test-public-collection-badge) { font: 600 40px Georgia, 'Times New Roman', serif; }
+.test-public-collection-badge { position: absolute; top: 9px; left: 9px; padding: 4px 8px; border: 1px solid rgba(255,255,255,.8); border-radius: 999px; color: #20243a; background: rgba(255,253,250,.92); font-size: 9px; font-weight: 800; }
+.test-public-collection-copy { padding: 12px; }
+.test-public-collection-copy > .test-eyebrow { color: #99543f; font-size: 8px; letter-spacing: .1em; }
+.test-public-collection-copy h3 { margin: 5px 0 6px; color: #20243a; font: 500 17px/1.15 Georgia, 'Times New Roman', serif; letter-spacing: -.025em; }
+.test-public-collection-copy h3 a { color: inherit; text-decoration: none; }
+.test-public-collection-copy p { min-height: 42px; margin: 0 0 9px; color: #62636c; font-size: 10px; line-height: 1.5; }
+.test-public-collection-open { display: inline-flex; align-items: center; gap: 6px; color: #99543f; font-size: 10px; font-weight: 780; text-decoration: none; }
+.test-public-collection-open:hover, .test-public-collection-copy h3 a:hover { text-decoration: underline; }
+.test-public-collection-signin { padding: 18px; display: grid; justify-items: start; gap: 7px; border: 1px solid #e4dfd7; border-radius: 12px; background: #f5f1e8; }
+.test-public-collection-signin > .test-eyebrow { color: #99543f; font-size: 8px; letter-spacing: .11em; }
+.test-public-collection-signin > strong { color: #20243a; font: 500 19px/1.2 Georgia, 'Times New Roman', serif; }
+.test-public-collection-signin > span:not(.test-eyebrow) { color: #62636c; font-size: 10px; }
+.test-public-collection-signin .test-button { margin-top: 3px; min-height: 34px; }
+.test-collection-management { margin-top: 6px; padding-top: 22px; display: grid; gap: 12px; border-top: 1px solid #e4dfd7; }
+.test-collection-share-hero { min-width: 0; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(250px, .9fr); align-items: stretch; overflow: hidden; border: 1px solid #e4dfd7; border-radius: 14px; background: #fffdfa; box-shadow: 0 10px 28px rgba(24, 35, 63, .055); }
+.test-collection-share-hero > div { padding: clamp(20px, 3vw, 36px); align-self: center; }
+.test-collection-share-hero > div > .test-eyebrow { color: #99543f; font-size: 9px; letter-spacing: .12em; }
+.test-collection-share-hero h1 { margin: 9px 0; color: #20243a; font: 500 clamp(27px, 4vw, 42px)/1.05 Georgia, 'Times New Roman', serif; letter-spacing: -.04em; }
+.test-collection-share-hero p { max-width: 570px; margin: 0 0 14px; color: #62636c; font-size: 12px; line-height: 1.55; }
+.test-collection-share-hero > img { width: 100%; height: 100%; min-height: 245px; display: block; object-fit: cover; }
+.test-collection-share-placeholder { min-height: 245px; display: grid; place-items: center; color: #b96b52; background: #f1eee7; font: 500 66px Georgia, 'Times New Roman', serif; }
+.test-collection-share-meta { color: #62636c; font-size: 10px; }
+.test-collection-share-meta strong { color: #20243a; font-size: 14px; }
+.test-collection-share-meta span { margin: 0 4px; color: #b96b52; }
+@media (max-width: 900px) {
+  .test-public-collection-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .test-public-collection-grid { grid-template-columns: 1fr; }
+  .test-public-collection-image { height: 180px; }
+  .test-public-collection-copy p { min-height: 0; }
+  .test-collection-share-hero { grid-template-columns: 1fr; }
+  .test-collection-share-hero > div { padding: 20px; }
+  .test-collection-share-hero > img, .test-collection-share-placeholder { height: 185px; min-height: 0; }
+}
