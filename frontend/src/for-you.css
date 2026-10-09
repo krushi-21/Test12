@@ -1,4 +1,26 @@
 .test-for-you-page { gap: 16px; }
+.test-feed-switch {
+  width: max-content;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #dedbd4;
+  border-radius: 10px;
+  background: #fffdfa;
+}
+.test-feed-switch a {
+  min-height: 34px;
+  padding: 8px 13px;
+  border-radius: 7px;
+  color: #555967;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.test-feed-switch a[aria-current="page"] { color: #fff; background: #20243a; }
+.test-feed-switch a:focus-visible { outline: 3px solid #d28b70; outline-offset: 2px; }
 .test-for-you-filters {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr)) auto;

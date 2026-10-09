@@ -108,9 +108,14 @@ async function navigate(url, { width, height, mobile }) {
   await client.send('Page.navigate', { url })
 }
 
-async function captureScreenshot(filePath, viewportWidth) {
+async function captureScreenshot(filePath, viewportWidth, mobile = false) {
   await evaluate('document.fonts?.ready.then(() => true)')
-  const pageHeight = await evaluate('Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)')
+  let pageHeight = await evaluate('Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)')
+  if (mobile) {
+    await client.send('Emulation.setDeviceMetricsOverride', { width: viewportWidth, height: pageHeight, deviceScaleFactor: 1, mobile: true })
+    await evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))')
+    pageHeight = await evaluate('Math.max(document.documentElement.scrollHeight, document.body.scrollHeight)')
+  }
   const screenshot = await client.send('Page.captureScreenshot', {
     format: 'png', captureBeyondViewport: true,
     clip: { x: 0, y: 0, width: viewportWidth, height: pageHeight, scale: 1 }
@@ -144,6 +149,9 @@ try {
   assert.equal(await evaluate('[...document.querySelectorAll(".home-founder-business-link")].some(link => link.textContent.includes("View business profile"))'), true)
   assert.equal(await evaluate('[...document.querySelectorAll(".home-founder-guest-follow a")].some(link => link.textContent.trim() === "Follow")'), true)
   assert.equal(await evaluate('[...document.querySelectorAll(".home-founder-guest-follow a")].some(link => link.textContent.trim() === "Sign in to follow this founder." && link.getAttribute("href") === "/test/account")'), true)
+  const followPresentation = await evaluate('(() => { const link = document.querySelector(".home-founder-follow-link"); const rect = link?.getBoundingClientRect(); const style = link ? getComputedStyle(link) : null; return { display: style?.display, visibility: style?.visibility, opacity: style?.opacity, color: style?.color, background: style?.backgroundColor, width: rect?.width, height: rect?.height }; })()')
+  console.log('Guest Follow presentation:', followPresentation)
+  assert.equal(followPresentation.background, 'rgb(216, 115, 96)', 'guest Follow CTA should render with the profile accent')
   assert.equal(await evaluate('[...document.querySelectorAll(".home-founder-collection-card a")].some(link => link.getAttribute("href")?.startsWith("/test/collection/"))'), true, 'collection should link to its public share URL')
   assert.equal(await evaluate('/512 followers|verified member/i.test(document.querySelector(".home-founder-page")?.innerText ?? "")'), false, 'unbacked follower counts and verification labels must not appear')
   const requestedPaths = client.events.filter(event => event.method === 'Network.requestWillBeSent').map(event => event.params.request.url)
@@ -160,7 +168,7 @@ try {
   assert.equal(await evaluate('window.innerWidth'), 390, 'mobile viewport should be 390px wide')
   assert.equal(await evaluate('getComputedStyle(document.querySelector(".home-founder-section-grid")).gridTemplateColumns.split(" ").length'), 1, 'profile sections should stack on mobile')
   const mobilePath = path.join(outputDirectory, 'mira-founder-mobile.png')
-  await captureScreenshot(mobilePath, 390)
+  await captureScreenshot(mobilePath, 390, true)
 
   const rheaUrl = new URL('/test/founder/rhea-sample-test-founder', origin).href
   await navigate(rheaUrl, { width: 1440, height: 1000, mobile: false })
@@ -174,7 +182,10 @@ try {
   }, null, 2))
 } finally {
   client?.close()
+  const browserExited = browser.exitCode !== null
+    ? Promise.resolve()
+    : new Promise(resolve => browser.once('exit', resolve))
   browser.kill('SIGTERM')
-  if (browser.exitCode === null) await new Promise(resolve => browser.once('exit', resolve))
-  await rm(profileDirectory, { recursive: true, force: true })
+  await Promise.race([browserExited, delay(5_000)])
+  await rm(profileDirectory, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 })
 }

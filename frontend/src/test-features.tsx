@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type
 import { Link, useSearchParams } from 'react-router-dom'
 import './for-you.css'
 import './collection-visual.css'
+import './profile-editor.css'
+import './feature-pages-visual.css'
 
 type User = { id: string; displayName: string; email: string; emailVerified: boolean }
 type Category = { id: string; name: string; slug: string }
@@ -46,6 +48,13 @@ type ForYouItem = Launch & { recommendationReason: string }
 type ForYouResponse = { items: ForYouItem[]; nextCursor: string | null; coldStart: boolean; rankingMode: 'personalized' | 'popular_recent' }
 type ForYouFilters = { city: string; state: string; category: string }
 const EMPTY_FOR_YOU_FILTERS: ForYouFilters = { city: '', state: '', category: '' }
+
+function FeedModeSwitch({ current }: { current: 'for-you' | 'following' }) {
+  return <nav className="test-feed-switch" aria-label="Choose feed" data-testid="feed-mode-switch">
+    <Link data-testid="feed-mode-for-you" aria-current={current === 'for-you' ? 'page' : undefined} to="/test/for-you">For You</Link>
+    <Link data-testid="feed-mode-following" aria-current={current === 'following' ? 'page' : undefined} to="/test/following">Following</Link>
+  </nav>
+}
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers)
@@ -221,7 +230,8 @@ export function BusinessDiscoveryPage({ user }: { user: User | null }) {
   const [priceMax, setPriceMax] = useState('')
   const [useRadius, setUseRadius] = useState(true)
   const [radiusKm, setRadiusKm] = useState('25')
-  const [view, setView] = useState<'list' | 'map'>('list')
+  const [view, setView] = useState<'list' | 'map'>(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 761px)').matches ? 'map' : 'list')
+  const [filtersExpanded, setFiltersExpanded] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 601px)').matches)
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -229,6 +239,12 @@ export function BusinessDiscoveryPage({ user }: { user: User | null }) {
   const mapLocationById = useMemo(() => new Map(mapLocations.map(location => [location.business.id, location])), [mapLocations])
   const businessesWithoutCoordinates = useMemo(() => items.filter(business => !hasFounderCoordinates(business)), [items])
   const selectedBusiness = items.find(business => business.id === selectedBusinessId)
+  useEffect(() => {
+    const desktopFilters = window.matchMedia('(min-width: 601px)')
+    const syncDisclosure = (event: MediaQueryListEvent) => setFiltersExpanded(event.matches)
+    desktopFilters.addEventListener('change', syncDisclosure)
+    return () => desktopFilters.removeEventListener('change', syncDisclosure)
+  }, [])
   useEffect(() => { void api<{ categories: Category[] }>('/categories').then(result => setCategories(result.categories)).catch(err => setError(message(err))) }, [])
   const load = useCallback(async () => {
     setBusy(true)
@@ -255,7 +271,8 @@ export function BusinessDiscoveryPage({ user }: { user: User | null }) {
   const selectedCategory = categories.find(item => item.id === category || item.slug === category)
   return <section className="test-content-width test-feature-page">
     <Heading eyebrow="LOCAL DISCOVERY · INDIA" title="Explore makers near you" description={city.trim() ? `Independent makers and small businesses around ${city.trim()}.` : 'Independent makers and small businesses near you.'} />
-    <div className="test-discovery-filters">
+    <button type="button" className="test-discovery-filter-toggle" aria-label={filtersExpanded ? 'Hide discovery filters' : 'Show discovery filters'} aria-expanded={filtersExpanded} aria-controls="discovery-filter-grid discovery-filter-toggles" onClick={() => setFiltersExpanded(expanded => !expanded)}><span>Filters</span><span className="test-discovery-filter-summary">{city.trim() || 'All India'} · {useRadius ? `${radiusKm} km radius` : 'All distances'}</span><span className="test-discovery-filter-indicator" aria-hidden="true">{filtersExpanded ? '−' : '+'}</span></button>
+    <div id="discovery-filter-grid" className={`test-discovery-filters${filtersExpanded ? ' is-expanded' : ''}`}>
       <label className="test-field"><span>Search businesses</span><input aria-label="Search businesses" value={query} onChange={event => setQuery(event.target.value)} placeholder="Cafe, studio, founder…" /></label>
       <label className="test-field"><span>City</span><input aria-label="Filter by city" list="india-cities" value={city} onChange={event => setCity(event.target.value)} placeholder="Ahmedabad" /><datalist id="india-cities">{Object.keys(cityCenters).map(name => <option key={name} value={name} />)}</datalist></label>
       <label className="test-field"><span>Area</span><input aria-label="Filter by area" value={area} onChange={event => setArea(event.target.value)} placeholder="e.g. Navrangpura" /></label>
@@ -265,7 +282,7 @@ export function BusinessDiscoveryPage({ user }: { user: User | null }) {
       <label className="test-field"><span>Minimum price (₹)</span><input aria-label="Minimum price in rupees" type="number" min="0" step="0.01" value={priceMin} onChange={event => setPriceMin(event.target.value)} /></label>
       <label className="test-field"><span>Maximum price (₹)</span><input aria-label="Maximum price in rupees" type="number" min="0" step="0.01" value={priceMax} onChange={event => setPriceMax(event.target.value)} /></label>
     </div>
-    <div className="test-filter-toggles"><label><input aria-label="Limit to selected city radius" type="checkbox" checked={useRadius} onChange={event => setUseRadius(event.target.checked)} />Within a selected city radius</label><label>Radius <select aria-label="Search radius in kilometres" value={radiusKm} onChange={event => setRadiusKm(event.target.value)}><option>5</option><option>10</option><option>25</option><option>50</option><option>100</option></select> km</label><label><input aria-label="Open now" type="checkbox" checked={openNow} onChange={event => setOpenNow(event.target.checked)} />Open now (India time)</label><label><input aria-label="Has a launch in the last 30 days" type="checkbox" checked={newlyLaunched} onChange={event => setNewlyLaunched(event.target.checked)} />Has a launch in the last 30 days</label><label><input aria-label="Email-verified founder account" type="checkbox" checked={verified} onChange={event => setVerified(event.target.checked)} />Email-verified founder account</label></div>
+    <div id="discovery-filter-toggles" className={`test-filter-toggles${filtersExpanded ? ' is-expanded' : ''}`}><label><input aria-label="Limit to selected city radius" type="checkbox" checked={useRadius} onChange={event => setUseRadius(event.target.checked)} />Within a selected city radius</label><label>Radius <select aria-label="Search radius in kilometres" value={radiusKm} onChange={event => setRadiusKm(event.target.value)}><option>5</option><option>10</option><option>25</option><option>50</option><option>100</option></select> km</label><label><input aria-label="Open now" type="checkbox" checked={openNow} onChange={event => setOpenNow(event.target.checked)} />Open now (India time)</label><label><input aria-label="Has a launch in the last 30 days" type="checkbox" checked={newlyLaunched} onChange={event => setNewlyLaunched(event.target.checked)} />Has a launch in the last 30 days</label><label><input aria-label="Email-verified founder account" type="checkbox" checked={verified} onChange={event => setVerified(event.target.checked)} />Email-verified founder account</label></div>
     <div className="test-action-row"><Button primary onClick={() => void load()} disabled={busy}>{busy ? 'Searching…' : 'Search nearby'}</Button><Button onClick={() => setView('list')} disabled={view === 'list'}>List view</Button><Button onClick={() => setView('map')} disabled={view === 'map'}>Map view</Button><span className="test-muted">{items.length} results · {city || 'all cities'}</span></div>
     {error && <Notice error>{error}</Notice>}
     {view === 'map' && <div className="test-map-panel" role="region" aria-label={`Business map for ${city || 'current search'}`}>
@@ -293,7 +310,7 @@ export function FollowingPage({ user }: { user: User | null }) {
   const [items, setItems] = useState<Launch[]>([])
   const [error, setError] = useState('')
   useEffect(() => { if (!user) return; let active = true; void api<Page<Launch>>('/me/following').then(result => { if (active) setItems(result.items) }).catch(err => { if (active) setError(message(err)) }); return () => { active = false } }, [user?.id])
-  return <section className="test-content-width test-feature-page"><Heading eyebrow="PERSONALIZED FEED" title="Following" description="Recent public launches from the founders, businesses, and categories you follow." />
+  return <section className="test-content-width test-feature-page"><FeedModeSwitch current="following" /><Heading eyebrow="PERSONALIZED FEED" title="Following" description="Recent public launches from the founders, businesses, and categories you follow." />
     {!user && <Notice><Link to="/test/account">Sign in to view your Following feed.</Link></Notice>}{error && <Notice error>{error}</Notice>}
     {items.length ? <div className="test-launch-list">{items.map(item => <LaunchCard key={item.id} item={item} source="following" />)}</div> : user && !error && <Notice>Your Following feed is empty. Follow a business from <Link to="/test/nearby">Explore near you</Link> or follow categories while browsing.</Notice>}
     <Link className="test-button test-button-primary" to="/test/nearby">Find businesses to follow</Link>
@@ -365,6 +382,7 @@ export function ForYouPage() {
   const isColdStart = ranking?.coldStart || ranking?.rankingMode === 'popular_recent'
 
   return <section className="test-content-width test-feature-page test-for-you-page" data-testid="for-you-page" aria-busy={loading || loadingMore}>
+    <FeedModeSwitch current="for-you" />
     <Heading eyebrow="COMMUNITY DISCOVERY" title="For you" description="A fresh mix of public launches, ranked for discovery. Recommendations are available whether or not you’re signed in." />
     <form className="test-for-you-filters" onSubmit={applyFilters} aria-label="Filter For You recommendations">
       <label className="test-field" htmlFor="for-you-city"><span>City</span><input id="for-you-city" maxLength={80} value={filters.city} onChange={event => setFilters(current => ({ ...current, city: event.target.value }))} placeholder="Any city" /></label>
@@ -487,12 +505,90 @@ export function LifecyclePanel({ launch, user }: { launch: Launch & { launchAt?:
   return <div className="test-lifecycle-panel"><div><span className="test-eyebrow">DISCOVERY STAGE</span><strong>{lifecycle.lifecycleStage.replaceAll('_', ' ')}</strong>{lifecycle.launchAt && <span>{new Date(lifecycle.launchAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })} · India time</span>}{seconds > 0 && <span className="test-countdown">Starts in {timeLabel}</span>}</div><Button onClick={() => void toggleNotify()}>{lifecycle.notified ? 'Remove reminder' : 'Notify me when launched'}</Button>{notice && <small role="status">{notice}</small>}</div>
 }
 
+type DatedLaunch = Launch & { launchAt?: string; countdownSeconds?: number; anniversaryDate?: string }
+function indiaDateParts(value: Date) {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(value)
+  return Object.fromEntries(parts.map(part => [part.type, part.value])) as Record<'year' | 'month' | 'day', string>
+}
+function upcomingDateKey(item: DatedLaunch, tab: 'upcoming' | 'anniversaries') {
+  const raw = tab === 'upcoming' ? item.launchAt : item.anniversaryDate
+  if (!raw) return ''
+  if (tab === 'anniversaries') {
+    const parts = indiaDateParts(new Date())
+    const monthDay = raw.match(/^\d{4}-(\d{2})-(\d{2})/)
+    return monthDay ? `${parts.year}-${monthDay[1]}-${monthDay[2]}` : ''
+  }
+  const value = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? new Date(`${raw}T12:00:00+05:30`) : new Date(raw)
+  if (!Number.isFinite(value.getTime())) return ''
+  const parts = indiaDateParts(value)
+  return `${parts.year}-${parts.month}-${parts.day}`
+}
+function formatIndiaDay(value: string, options: Intl.DateTimeFormatOptions = { dateStyle: 'full' }) {
+  return new Date(`${value}T12:00:00+05:30`).toLocaleDateString('en-IN', { ...options, timeZone: 'Asia/Kolkata' })
+}
+function formatLaunchTime(value: string) {
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value)
+  const date = dateOnly ? new Date(`${value}T12:00:00+05:30`) : new Date(value)
+  if (!Number.isFinite(date.getTime())) return value
+  return date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', ...(dateOnly ? {} : { timeStyle: 'short' }) }) + (dateOnly ? '' : ' IST')
+}
+
 export function UpcomingPage() {
   const [tab, setTab] = useState<'upcoming' | 'anniversaries'>('upcoming')
-  const [items, setItems] = useState<Array<Launch & { launchAt?: string; countdownSeconds?: number; anniversaryDate?: string }>>([])
+  const [items, setItems] = useState<DatedLaunch[]>([])
   const [error, setError] = useState('')
-  useEffect(() => { let active = true; void api<Page<Launch & { launchAt?: string; countdownSeconds?: number; anniversaryDate?: string }>>(`/launches/${tab}`).then(result => { if (active) setItems(result.items) }).catch(err => { if (active) setError(message(err)) }); return () => { active = false } }, [tab])
-  return <section className="test-content-width test-feature-page"><Heading eyebrow="LAUNCH CALENDAR · ASIA/KOLKATA" title={tab === 'upcoming' ? 'Upcoming launches' : 'Launch anniversaries'} description="Browse scheduled launches and businesses celebrating a launch anniversary today." /><div className="test-action-row"><Button primary={tab === 'upcoming'} onClick={() => setTab('upcoming')}>Coming soon</Button><Button primary={tab === 'anniversaries'} onClick={() => setTab('anniversaries')}>Anniversaries</Button></div>{error && <Notice error>{error}</Notice>}{items.length ? <div className="test-launch-list">{items.map(item => <article className="test-workspace-card test-calendar-card" key={item.id}><div><span className="test-eyebrow">{tab === 'upcoming' ? 'COMING SOON' : 'ANNIVERSARY'}</span><h2><Link to={`/test/launch/${item.slug}`}>{item.title}</Link></h2><p>{item.summary}</p></div>{item.launchAt && <time dateTime={item.launchAt}>{new Date(item.launchAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })} IST</time>}{item.anniversaryDate && <time dateTime={item.anniversaryDate}>{item.anniversaryDate}</time>}{item.countdownSeconds != null && <strong>{Math.floor(item.countdownSeconds / 86400)} days remaining</strong>}</article>)}</div> : !error && <Notice>No {tab === 'upcoming' ? 'scheduled launches' : 'launch anniversaries'} to show yet.</Notice>}</section>
+  const [monthOffset, setMonthOffset] = useState(0)
+  const [selectedDate, setSelectedDate] = useState('')
+  const [indiaToday] = useState(() => indiaDateParts(new Date()))
+  useEffect(() => { let active = true; setError(''); setItems([]); void api<Page<DatedLaunch>>(`/launches/${tab}`).then(result => { if (active) setItems(result.items) }).catch(err => { if (active) setError(message(err)) }); return () => { active = false } }, [tab])
+  const monthDate = new Date(Date.UTC(Number(indiaToday.year), Number(indiaToday.month) - 1 + monthOffset, 1))
+  const year = monthDate.getUTCFullYear()
+  const month = monthDate.getUTCMonth() + 1
+  const monthKey = `${year}-${String(month).padStart(2, '0')}`
+  const monthLabel = monthDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+  const datedItems = useMemo(() => items.map(item => ({ item, dateKey: upcomingDateKey(item, tab) })), [items, tab])
+  const itemsByDate = useMemo(() => datedItems.reduce<Record<string, DatedLaunch[]>>((map, entry) => { if (entry.dateKey) (map[entry.dateKey] ||= []).push(entry.item); return map }, {}), [datedItems])
+  const monthDates = Object.keys(itemsByDate).filter(key => key.startsWith(`${monthKey}-`)).sort()
+  const activeDate = selectedDate.startsWith(`${monthKey}-`) ? selectedDate : monthDates[0] || `${monthKey}-01`
+  const activeItems = itemsByDate[activeDate] || []
+  const firstWeekday = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  const eventCountThisMonth = monthDates.reduce((total, key) => total + itemsByDate[key].length, 0)
+  const undatedItems = datedItems.filter(entry => !entry.dateKey).map(entry => entry.item)
+  return <section className="test-content-width test-feature-page test-upcoming-calendar" data-testid="upcoming-calendar">
+    <Heading eyebrow="LAUNCH CALENDAR · ASIA/KOLKATA" title={tab === 'upcoming' ? 'Upcoming launches' : 'Launch anniversaries'} description="Browse scheduled launches in the India-time calendar, or see businesses celebrating a launch anniversary today." />
+    <div className="test-upcoming-toolbar"><div className="test-upcoming-tabs" role="group" aria-label="Calendar view">
+      <button className="test-upcoming-tab" type="button" aria-pressed={tab === 'upcoming'} onClick={() => { setTab('upcoming'); setMonthOffset(0); setSelectedDate('') }}>Coming soon</button>
+      <button className="test-upcoming-tab" type="button" aria-pressed={tab === 'anniversaries'} onClick={() => { setTab('anniversaries'); setMonthOffset(0); setSelectedDate('') }}>Anniversaries</button>
+    </div><span className="test-upcoming-count">{items.length} {tab === 'upcoming' ? 'scheduled launches' : 'anniversaries in this API result'} · India time</span></div>
+    {error && <Notice error>{error}</Notice>}
+    {!error && !items.length && <Notice>No {tab === 'upcoming' ? 'scheduled launches' : 'launch anniversaries'} to show yet.</Notice>}
+    <div className="test-calendar-layout">
+      <section className="test-calendar-board" aria-label={`${monthLabel} launch calendar`}>
+        <div className="test-calendar-monthbar"><button type="button" aria-label="Previous month" disabled={tab === 'anniversaries'} onClick={() => setMonthOffset(value => value - 1)}>‹</button><h2>{monthLabel}</h2><button type="button" aria-label="Next month" disabled={tab === 'anniversaries'} onClick={() => setMonthOffset(value => value + 1)}>›</button></div>
+        <div className="test-calendar-grid" role="group" aria-label={`${monthLabel} dates`}>
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => <span className="test-calendar-weekday" aria-hidden="true" key={day}>{day}</span>)}
+          {Array.from({ length: 42 }, (_, index) => {
+            const day = index - firstWeekday + 1
+            if (day < 1 || day > daysInMonth) return <span className="test-calendar-day is-outside" aria-hidden="true" key={`blank-${index}`} />
+            const dateKey = `${monthKey}-${String(day).padStart(2, '0')}`
+            const dayItems = itemsByDate[dateKey] || []
+            return <button className={`test-calendar-day ${dateKey === activeDate ? 'is-selected' : ''}`} type="button" aria-label={`${formatIndiaDay(dateKey)}${dayItems.length ? `, ${dayItems.length} launch${dayItems.length === 1 ? '' : 'es'}` : ''}`} aria-pressed={dateKey === activeDate} key={dateKey} onClick={() => setSelectedDate(dateKey)}><span className="test-calendar-day-number">{day}</span>{dayItems.length > 0 && <span className="test-calendar-day-count" aria-hidden="true">{dayItems.length}</span>}</button>
+          })}
+        </div>
+        <p className="test-calendar-note">{tab === 'upcoming' ? `${eventCountThisMonth} launch${eventCountThisMonth === 1 ? '' : 'es'} in the current API result for this month.` : 'Anniversaries are returned for today by the existing API; month navigation is disabled for this view.'}</p>
+      </section>
+      <section className="test-agenda" aria-label="Selected day agenda">
+        <header className="test-agenda-heading"><span>Selected day · India time</span><h2>{formatIndiaDay(activeDate)}</h2><p>{activeItems.length ? `${activeItems.length} item${activeItems.length === 1 ? '' : 's'} on this day` : 'No returned events on this day'}</p></header>
+        {activeItems.length ? activeItems.map(item => {
+          const rawDate = tab === 'upcoming' ? item.launchAt : item.anniversaryDate
+          const dateLabel = tab === 'upcoming' ? (rawDate ? formatLaunchTime(rawDate) : formatIndiaDay(activeDate)) : `Launch anniversary · ${formatIndiaDay(activeDate, { day: 'numeric', month: 'short' })}`
+          return <article className="test-workspace-card test-calendar-card test-agenda-card" key={item.id} data-testid="calendar-event-card"><div className="test-agenda-date"><strong>{formatIndiaDay(activeDate, { day: 'numeric' })}</strong><span>{formatIndiaDay(activeDate, { month: 'short' })}</span></div><div className="test-agenda-copy"><span>{tab === 'upcoming' ? 'Coming soon' : 'Anniversary'}</span><h3><Link to={`/test/launch/${item.slug}`}>{item.title}</Link></h3><p>{item.summary || item.story || 'A launch from the Aarambh community.'}</p><div className="test-agenda-meta"><time dateTime={rawDate || activeDate}>{dateLabel}</time>{item.countdownSeconds != null && <strong>{Math.floor(item.countdownSeconds / 86400)} days remaining</strong>}{item.brand?.name && <span>{item.brand.name}</span>}</div></div></article>
+        }) : <div className="test-agenda-empty"><strong>No events on this date</strong><span>{tab === 'upcoming' ? 'Choose a marked day to see its scheduled launches.' : 'The anniversary endpoint returns today’s celebrations only.'}</span></div>}
+      </section>
+    </div>
+    {undatedItems.length > 0 && <section className="test-undated-list"><h2>Other launches in this response</h2>{undatedItems.map(item => <article className="test-calendar-card" key={item.id}><Link to={`/test/launch/${item.slug}`}>{item.title}</Link><span>{item.brand?.name || 'Aarambh business'}</span><p>{item.summary || item.story || 'Launch details'}</p></article>)}</section>}
+  </section>
 }
 
 type ReviewReportReason = 'misleading' | 'conflict_of_interest' | 'abuse' | 'other'
@@ -624,12 +720,17 @@ export function NotificationsPage({ user }: { user: User | null }) {
 
 export function TrendingPage() {
   const [period, setPeriod] = useState<'today' | 'week' | 'month' | 'risingBusinesses'>('today')
-  const [data, setData] = useState<{ today: Array<{ rank: number; title: string; id: string; slug: string; brandName: string; city?: string; score: number }>; week: Array<{ rank: number; title: string; id: string; slug: string; brandName: string; score: number }>; month: Array<{ rank: number; title: string; id: string; slug: string; brandName: string; score: number }>; risingBusinesses: Array<{ id: string; slug: string; name: string; city?: string; interactions: number }> } | null>(null)
+  const [data, setData] = useState<{ today: Array<{ rank: number; title: string; id: string; slug: string; brandName: string; city?: string; category?: string; score: number }>; week: Array<{ rank: number; title: string; id: string; slug: string; brandName: string; city?: string; category?: string; score: number }>; month: Array<{ rank: number; title: string; id: string; slug: string; brandName: string; city?: string; category?: string; score: number }>; risingBusinesses: Array<{ id: string; slug: string; name: string; city?: string; category?: string; interactions: number }> } | null>(null)
   const [error, setError] = useState('')
   useEffect(() => { void api<typeof data>('/trending/dashboard').then(setData).catch(err => setError(message(err))) }, [])
   const items = period === 'today' ? data?.today : period === 'week' ? data?.week : data?.month
-  return <section className="test-content-width test-feature-page"><Heading eyebrow="COMMUNITY MOMENTUM · PROVISIONAL" title="Trending" description="Separate today, week, month, and rising-business views. Ranking is based on synthetic preview engagement and isn’t a production score." /><div className="test-action-row">{(['today', 'week', 'month', 'risingBusinesses'] as const).map(option => <Button key={option} primary={period === option} onClick={() => setPeriod(option)}>{option === 'today' ? 'Trending today' : option === 'week' ? 'This week' : option === 'month' ? 'This month' : 'Rising businesses'}</Button>)}</div>{error && <Notice error>{error}</Notice>}
-    {period === 'risingBusinesses' ? data?.risingBusinesses.length ? <div className="test-business-grid">{data.risingBusinesses.map(business => <article className="test-business-card" key={business.id}><span className="test-eyebrow">Rising · {business.city || 'India'}</span><h2><Link to={`/test/brand/${business.slug}?source=trending`}>{business.name}</Link></h2><p>{business.interactions} recent interactions</p></article>)}</div> : data && <Notice>No rising businesses yet.</Notice> : items?.length ? <ol className="test-rank-list">{items.map(item => <li key={item.id}><strong>{item.rank}</strong><Link to={`/test/launch/${item.slug}?source=trending`}>{item.title}</Link><span>{item.brandName} · {item.score} points</span></li>)}</ol> : data && <Notice>Trending rankings are forming. Member likes, saves, and qualified contact clicks contribute to the provisional score.</Notice>}
+  return <section className="test-content-width test-feature-page test-trending-editorial" data-testid="trending-page">
+    <Heading eyebrow="COMMUNITY MOMENTUM · PROVISIONAL" title="Trending" description="Discover launches gaining attention and businesses rising in the community. Rankings use synthetic preview engagement and are not a production score." />
+    <div className="test-trending-toolbar"><div className="test-trending-tabs" role="group" aria-label="Trending period">
+      {(['today', 'week', 'month', 'risingBusinesses'] as const).map(option => <button className="test-trending-tab" type="button" key={option} aria-pressed={period === option} onClick={() => setPeriod(option)}>{option === 'today' ? 'Trending today' : option === 'week' ? 'This week' : option === 'month' ? 'This month' : 'Rising businesses'}</button>)}
+    </div><span className="test-trending-caption">{period === 'risingBusinesses' ? 'Businesses with recent engagement' : `${items?.length || 0} launches · ${period === 'today' ? 'Today' : period === 'week' ? 'This week' : 'This month'}`}</span></div>
+    {error && <Notice error>{error}</Notice>}
+    {period === 'risingBusinesses' ? data?.risingBusinesses.length ? <div className="test-rising-grid">{data.risingBusinesses.map((business, index) => <article className="test-rising-card" key={business.id}><div className="test-rising-topline"><span>Rising maker · {business.city || 'India'}</span><span>#{index + 1}</span></div><span className="test-rising-monogram" aria-hidden="true">{business.name.slice(0, 1).toUpperCase()}</span><h2><Link to={`/test/brand/${business.slug}?source=trending`}>{business.name}</Link></h2><p>{business.category || 'Independent business'}</p><div className="test-rising-metric"><span>Recent interactions</span><strong>{business.interactions}</strong></div></article>)}</div> : data && <Notice>No rising businesses yet.</Notice> : items?.length ? <ol className="test-trending-feed">{items.map(item => <li className="test-trending-card" key={item.id} data-testid="trending-entry"><div className="test-trending-rank"><span>RANK</span><strong>{item.rank}</strong></div><div className="test-trending-copy"><div><span>{item.category || 'Launch'}</span><span>{item.city || 'Across India'}</span></div><h2><Link to={`/test/launch/${item.slug}?source=trending`}>{item.title}</Link></h2><p>From {item.brandName}</p></div><div className="test-trending-score"><span>Momentum</span><strong>{item.score}</strong><small>points</small></div></li>)}</ol> : data && <Notice>Trending rankings are forming. Member likes, saves, and qualified contact clicks contribute to the provisional score.</Notice>}
   </section>
 }
 
@@ -644,49 +745,353 @@ export function FounderDashboardPage({ user }: { user: User | null }) {
     return data.series.map(row => ({ label: String(row.date), views: Number(row.views || 0), websiteClicks: Number(row.websiteClicks || 0), saves: Number(row.saves || 0) }))
   }, [data?.series, group])
   const max = Math.max(1, ...chart.map(item => item.views))
-  if (!user) return <section className="test-content-width test-feature-page"><Heading eyebrow="FOUNDER HOME" title="Your business dashboard" /><Notice><Link to="/test/account">Sign in to view founder analytics.</Link></Notice></section>
+  if (!user) return <section className="test-content-width test-feature-page test-founder-analytics"><Heading eyebrow="FOUNDER HOME" title="Your business dashboard" /><Notice><Link to="/test/account">Sign in to view founder analytics.</Link></Notice></section>
   const totals = data?.totals || {}
   const cards = [['Views', totals.views], ['Profile visits', totals.profileVisits], ['Launch views', totals.launchViews], ['Feed impressions', totals.feedImpressions], ['Website clicks', totals.websiteClicks], ['WhatsApp clicks', totals.whatsappClicks], ['Saves', totals.saves], ['Likes', totals.likes]] as const
-  return <section className="test-content-width test-feature-page"><div className="test-dashboard-heading"><div><Heading eyebrow="FOUNDER HOME · SYNTHETIC DATA" title={`Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, ${user.displayName}.`} description="A private overview of aggregated activity for your businesses. No visitor identities are shown." /></div><div className="test-action-row"><Link className="test-button test-button-primary" to="/test/workspace">Create launch</Link><Link className="test-button test-button-secondary" to="/test/workspace#test-products-section">Add product</Link><Link className="test-button test-button-secondary" to="/test/founder-profile">Update profile</Link><Link className="test-button test-button-secondary" to="/test/analytics">View analytics</Link></div></div>
-    <div className="test-action-row"><Button primary={range === '7d'} disabled={group !== 'day'} onClick={() => setRange('7d')}>7 days</Button><Button primary={range === '30d'} disabled={group !== 'day'} onClick={() => setRange('30d')}>30 days</Button><span className="test-muted">Asia/Kolkata · sample preview activity only</span></div>{error && <Notice error>{error}</Notice>}
-    <div className="test-metric-grid">{cards.map(([label, value]) => <article className="test-metric-card" key={label}><span>{label}</span><strong>{value ?? 0}</strong></article>)}</div>
-    <section className="test-workspace-card"><div className="test-section-heading"><div><span className="test-eyebrow">ACTIVITY OVER TIME</span><h2>Business performance</h2></div><div className="test-action-row">{(['day', 'week', 'month'] as const).map(option => <Button key={option} primary={group === option} onClick={() => setGroup(option)}>{option === 'day' ? 'Daily' : option === 'week' ? 'Weekly' : 'Monthly'}</Button>)}</div></div><div className="test-chart" role="img" aria-label={`Views chart grouped by ${group}`}>{chart.map(point => <div className="test-chart-column" key={point.label} title={`${point.label}: ${point.views} views`}><div className="test-chart-bar" style={{ height: `${Math.max(point.views ? 5 : 1, point.views / max * 100)}%` }} /><span>{point.label.slice(5)}</span></div>)}</div><p className="test-muted">Views = profile visits + launch-detail views. Feed impressions are separate; contact actions and saves/likes remain separate totals.</p></section>
+  return <section className="test-content-width test-feature-page test-founder-analytics" data-testid="founder-analytics-page">
+    <div className="test-founder-hero"><div className="test-founder-hero-main"><img className="test-founder-hero-image" src="/images/growth-maker.jpg" alt="A small-business founder at work" loading="lazy" /><div className="test-founder-hero-copy"><Heading eyebrow="FOUNDER HOME · PRIVATE ANALYTICS" title={`Good ${new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, ${user.displayName}.`} description="A private overview of aggregated activity for your businesses. No visitor identities are shown." /><div className="test-founder-actions"><Link className="test-button test-button-primary" to="/test/workspace">Create launch</Link><Link className="test-button test-button-secondary" to="/test/workspace#test-products-section">Add product</Link><Link className="test-button test-button-secondary" to="/test/founder-profile">Update profile</Link><Link className="test-button test-button-secondary" to="/test/analytics">View analytics</Link></div></div></div><aside className="test-founder-hero-aside"><span>Portfolio at a glance</span><strong>{totals.views ?? 0}</strong><small>Profile and launch-detail views in the selected period</small><div className="test-founder-brand-list" aria-label="Your businesses">{data?.brands.length ? data.brands.map(brand => <span key={brand.id}>{brand.name}</span>) : <span>No published businesses yet</span>}</div></aside></div>
+    <div className="test-founder-controls"><div><Button primary={range === '7d'} disabled={group !== 'day'} onClick={() => setRange('7d')}>7 days</Button><Button primary={range === '30d'} disabled={group !== 'day'} onClick={() => setRange('30d')}>30 days</Button></div><div><span className="test-muted">Asia/Kolkata · synthetic preview activity</span>{error && <Notice error>{error}</Notice>}</div></div>
+    <div className="test-metric-grid test-founder-metrics">{cards.map(([label, value]) => <article className="test-metric-card" key={label}><span>{label}</span><strong>{value ?? 0}</strong></article>)}</div>
+    <section className="test-founder-performance"><div className="test-section-heading"><div><span className="test-eyebrow">ACTIVITY OVER TIME</span><h2>Business performance</h2></div><div className="test-action-row">{(['day', 'week', 'month'] as const).map(option => <Button key={option} primary={group === option} onClick={() => setGroup(option)}>{option === 'day' ? 'Daily' : option === 'week' ? 'Weekly' : 'Monthly'}</Button>)}</div></div><div className="test-chart" role="img" aria-label={`Views chart grouped by ${group}`}>{chart.map(point => <div className="test-chart-column" key={point.label} title={`${point.label}: ${point.views} views`}><div className="test-chart-bar" style={{ height: `${Math.max(point.views ? 5 : 1, point.views / max * 100)}%` }} /><span>{point.label.slice(5)}</span></div>)}</div><p>Views = profile visits + launch-detail views. Feed impressions are separate; contact actions and saves/likes remain separate totals.</p></section>
     <div className="test-dashboard-grid"><section className="test-workspace-card"><h2>Your launches</h2>{data?.launches.length ? <ul className="test-analytics-list">{data.launches.map(item => <li key={item.id}><Link to={`/test/launch/${item.slug}`}>{item.title}</Link><strong>{item.views} views</strong></li>)}</ul> : <p className="test-muted">No launch-view events yet.</p>}{data?.bestLaunch && <p>Best-performing launch: <strong>{data.bestLaunch.title}</strong></p>}</section><section className="test-workspace-card"><h2>Traffic sources</h2>{data?.sources.length ? <ul className="test-analytics-list">{data.sources.map(item => <li key={item.source}><span>{item.source}</span><strong>{item.count}</strong></li>)}</ul> : <p className="test-muted">Traffic-source data will appear as synthetic preview visits occur.</p>}<p>Website click-through rate from Aarambh: <strong>{data?.websiteConversion ?? 0}%</strong></p><p className="test-muted">Website click-through rate is website clicks divided by profile visits plus launch-detail views. Sales are not tracked.</p></section></div>
     <section className="test-workspace-card"><div className="test-section-heading"><h2>Business actions</h2><span>Private aggregate counts</span></div><div className="test-metric-grid test-metric-grid-small">{[['Call clicks', totals.calls], ['Email clicks', totals.emails], ['Directions', totals.directions], ['Quote requests', totals.quoteRequests], ['Demo bookings', totals.demoBookings], ['Store visits', totals.storeVisits], ['Product clicks', totals.productClicks]].map(([label, value]) => <article className="test-metric-card" key={String(label)}><span>{label}</span><strong>{value ?? 0}</strong></article>)}</div>{data?.bestProduct && <p>Best-performing product: <strong>{data.bestProduct.name}</strong> · {data.bestProduct.clicks} clicks</p>}</section>
   </section>
 }
 
+type OwnedProfileBrand = Record<string, unknown> & {
+  id: string
+  name: string
+  logoUrl?: string
+  description?: string
+  tagline?: string
+  category?: string
+  status?: string
+  moderationLocked?: boolean
+}
+
+type ProfileCategory = { id: string; name: string; slug?: string }
+
+async function uploadProfileImage(file: File, purpose: 'brand-logo' | 'founder-avatar') {
+  const form = new FormData()
+  form.set('purpose', purpose)
+  form.set('file', file)
+  const result = await api<{ asset: { id: string; url: string } }>('/uploads', { method: 'POST', body: form })
+  return result.asset
+}
+
+function businessFieldsFrom(brand: OwnedProfileBrand) {
+  return Object.fromEntries([
+    'name', 'logoUrl', 'description', 'category', 'websiteUrl', 'instagramUrl', 'whatsappUrl', 'tagline',
+    'city', 'state', 'foundedYear', 'area', 'address', 'latitude', 'longitude', 'contactPhone', 'contactEmail',
+    'quoteUrl', 'demoUrl', 'storeUrl', 'businessMode'
+  ].map(key => [key, String(brand[key] ?? (key === 'businessMode' ? 'online' : ''))])) as Record<string, string>
+}
+
+const SAMPLE_BUSINESS_COVER = '/images/launch-craft.webp'
+const SAMPLE_BUSINESS_GALLERY = ['/images/launch-home.jpg', '/images/launch-textile.jpg', '/images/growth-maker.jpg']
+function profilePreviewImageUrl(value: string): string {
+  const candidate = value.trim()
+  if (candidate.startsWith('/images/')) return candidate
+  try { const parsed = new URL(candidate); return parsed.protocol === 'https:' ? parsed.href : '' }
+  catch { return '' }
+}
+function businessMediaPreviewFrom(brand: OwnedProfileBrand) {
+  const gallery = brand.galleryImageUrls
+  const galleryUrls = Array.isArray(gallery) ? gallery.map(String).join('\n') : typeof gallery === 'string' && gallery.trim() ? gallery : SAMPLE_BUSINESS_GALLERY.join('\n')
+  return { coverUrl: String(brand.coverImageUrl || SAMPLE_BUSINESS_COVER), galleryUrls }
+}
+
 export function BusinessProfileEditorPage({ user }: { user: User | null }) {
-  const [brands, setBrands] = useState<Array<Record<string, unknown> & { id: string; name: string }>>([])
+  const [brands, setBrands] = useState<OwnedProfileBrand[]>([])
+  const [categories, setCategories] = useState<ProfileCategory[]>([])
   const [selected, setSelected] = useState('')
   const [form, setForm] = useState<Record<string, string>>({})
   const [hours, setHours] = useState<HoursState>({})
   const [notice, setNotice] = useState('')
+  const [noticeIsError, setNoticeIsError] = useState(false)
   const [busy, setBusy] = useState(false)
-  const load = useCallback(async () => { if (!user) return; const result = await api<{ items: typeof brands }>('/me/brands'); setBrands(result.items); const chosen = result.items.find(item => item.id === selected) || result.items[0]; if (chosen) { setSelected(chosen.id); setForm({ city: String(chosen.city || ''), area: String(chosen.area || ''), address: String(chosen.address || ''), latitude: String(chosen.latitude ?? ''), longitude: String(chosen.longitude ?? ''), businessMode: String(chosen.businessMode || 'online'), contactPhone: String(chosen.contactPhone || ''), contactEmail: String(chosen.contactEmail || ''), websiteUrl: String(chosen.websiteUrl || ''), whatsappUrl: String(chosen.whatsappUrl || ''), quoteUrl: String(chosen.quoteUrl || ''), demoUrl: String(chosen.demoUrl || ''), storeUrl: String(chosen.storeUrl || '') }); setHours(normalizeHours(chosen.openingHours)) } }, [user?.id, selected])
-  useEffect(() => { void load().catch(err => setNotice(message(err))) }, [load])
+  const [uploading, setUploading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [mediaPreview, setMediaPreview] = useState({ coverUrl: SAMPLE_BUSINESS_COVER, galleryUrls: SAMPLE_BUSINESS_GALLERY.join('\n') })
+  const logoInput = useRef<HTMLInputElement | null>(null)
+  const selectedBrand = brands.find(item => item.id === selected) || null
+
+  useEffect(() => {
+    if (!user) { setLoading(false); return }
+    let active = true
+    setLoading(true)
+    void api<{ items: OwnedProfileBrand[] }>('/me/brands').then(result => {
+      if (!active) return
+      setBrands(result.items)
+      const chosen = result.items.find(item => item.id === selected) || result.items[0]
+      if (chosen) {
+        setSelected(chosen.id)
+        setForm(businessFieldsFrom(chosen))
+        setHours(normalizeHours(chosen.openingHours))
+        setMediaPreview(businessMediaPreviewFrom(chosen))
+      }
+    }).catch(err => { if (active) { setNotice(message(err)); setNoticeIsError(true) } }).finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [user?.id])
+
+  useEffect(() => {
+    if (!user) return
+    let active = true
+    void api<{ categories: ProfileCategory[] }>('/categories').then(result => { if (active) setCategories(result.categories) }).catch(err => {
+      if (active) { setNotice(message(err)); setNoticeIsError(true) }
+    })
+    return () => { active = false }
+  }, [user?.id])
+
   function set(key: string, value: string) { setForm(old => ({ ...old, [key]: value })) }
-  async function submit(event: FormEvent) { event.preventDefault(); setBusy(true); setNotice(''); try { const brand = brands.find(item => item.id === selected); if (!brand) throw new Error('Choose a brand.'); const addressFields = ['city', 'area', 'address', 'contactPhone', 'contactEmail', 'websiteUrl', 'whatsappUrl', 'quoteUrl', 'demoUrl', 'storeUrl']; const payload: Record<string, unknown> = { businessMode: form.businessMode, openingHours: hours }; for (const key of addressFields) if (form[key]?.trim()) payload[key] = form[key].trim(); else if (['contactPhone', 'contactEmail', 'websiteUrl', 'whatsappUrl', 'quoteUrl', 'demoUrl', 'storeUrl'].includes(key)) payload[key] = undefined; const latitude = Number(form.latitude), longitude = Number(form.longitude); if (form.latitude.trim() && Number.isFinite(latitude)) payload.latitude = latitude; if (form.longitude.trim() && Number.isFinite(longitude)) payload.longitude = longitude; await api(`/me/brands/${selected}`, { method: 'PATCH', body: body({ brand: payload }) }); setNotice('Business profile and weekly hours saved. Open-now discovery uses Asia/Kolkata.') } catch (err) { setNotice(message(err)) } finally { setBusy(false) } }
+  function chooseBrand(id: string) {
+    const chosen = brands.find(item => item.id === id)
+    if (!chosen) return
+    setSelected(id)
+    setForm(businessFieldsFrom(chosen))
+    setHours(normalizeHours(chosen.openingHours))
+    setMediaPreview(businessMediaPreviewFrom(chosen))
+    setNotice('')
+  }
+  async function uploadLogo(file?: File) {
+    if (!file) return
+    setUploading(true)
+    setNotice('')
+    try {
+      const asset = await uploadProfileImage(file, 'brand-logo')
+      set('logoUrl', asset.url)
+      setNotice('Business logo uploaded to temporary preview storage. Save the profile to attach it.')
+      setNoticeIsError(false)
+    } catch (err) { setNotice(message(err)); setNoticeIsError(true) }
+    finally { setUploading(false); if (logoInput.current) logoInput.current.value = '' }
+  }
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true); setNotice(''); setNoticeIsError(false)
+    try {
+      const brand = brands.find(item => item.id === selected)
+      if (!brand) throw new Error('Choose a business.')
+      const stringFields = ['name', 'logoUrl', 'description', 'category', 'websiteUrl', 'instagramUrl', 'whatsappUrl', 'tagline', 'city', 'state', 'area', 'address', 'contactPhone', 'contactEmail', 'quoteUrl', 'demoUrl', 'storeUrl']
+      const payload: Record<string, unknown> = { businessMode: form.businessMode || 'online', openingHours: hours }
+      for (const key of stringFields) if (form[key]?.trim()) payload[key] = form[key].trim()
+      if (form.foundedYear.trim()) payload.foundedYear = Number(form.foundedYear)
+      const latitude = Number(form.latitude), longitude = Number(form.longitude)
+      if (form.latitude.trim() && Number.isFinite(latitude)) payload.latitude = latitude
+      if (form.longitude.trim() && Number.isFinite(longitude)) payload.longitude = longitude
+      const result = await api<{ item: OwnedProfileBrand }>(`/me/brands/${selected}`, { method: 'PATCH', body: body({ brand: payload }) })
+      setBrands(old => old.map(item => item.id === selected ? { ...item, ...payload, openingHours: hours, ...(result.item?.id === selected ? result.item : {}) } : item))
+      setNotice('Business profile and weekly hours saved. Open-now discovery uses Asia/Kolkata.')
+    } catch (err) { setNotice(message(err)); setNoticeIsError(true) }
+    finally { setBusy(false) }
+  }
+  async function publish() {
+    if (!selected || selectedBrand?.moderationLocked) return
+    setBusy(true); setNotice(''); setNoticeIsError(false)
+    try {
+      const result = await api<{ item: OwnedProfileBrand }>(`/me/brands/${selected}/publish`, { method: 'POST' })
+      if (result.item?.id === selected) setBrands(old => old.map(item => item.id === selected ? result.item : item))
+      setNotice('Business profile published.')
+    } catch (err) { setNotice(message(err)); setNoticeIsError(true) }
+    finally { setBusy(false) }
+  }
+  const location = [form.address, form.area, form.city, form.state].filter(Boolean).join(', ')
+  const businessProfileDirty = Boolean(selectedBrand) && (JSON.stringify(form) !== JSON.stringify(businessFieldsFrom(selectedBrand!)) || JSON.stringify(hours) !== JSON.stringify(normalizeHours(selectedBrand!.openingHours)))
+  const configuredDays = Object.keys(hours).length
+  const categoryName = categories.find(item => item.id === form.category)?.name || form.category
+  const status = String(selectedBrand?.status || 'draft').replaceAll('_', ' ')
+  const coverPreviewUrl = profilePreviewImageUrl(mediaPreview.coverUrl)
+  const galleryPreviewUrls = mediaPreview.galleryUrls.split(/\r?\n/u).map(profilePreviewImageUrl).filter(Boolean).slice(0, 6)
+  const verifiedBusiness = selectedBrand?.verified === true || selectedBrand?.verificationStatus === 'verified'
+  const renderPreview = (expanded = false) => <article className={`test-profile-live-card test-business-live-card ${expanded ? 'is-expanded' : ''}`}>
+    <div className="test-business-live-cover" aria-label="Business cover image preview">
+      {coverPreviewUrl ? <img src={coverPreviewUrl} alt={`${form.name || 'Business'} cover preview`} /> : <span>Choose a cover image to preview your story</span>}
+      <span className="test-business-cover-label">COVER · PREVIEW</span>
+    </div>
+    <div className="test-business-live-gallery" aria-label="Business gallery preview">
+      {galleryPreviewUrls.length ? galleryPreviewUrls.map((url, index) => <img key={`${url}-${index}`} src={url} alt={`${form.name || 'Business'} gallery preview ${index + 1}`} />) : <span>Add image URLs to preview your gallery.</span>}
+    </div>
+    <div className="test-business-live-content">
+      {form.logoUrl ? <img className="test-business-live-logo" src={form.logoUrl} alt={`${form.name || 'Business'} logo preview`} /> : <span className="test-business-live-logo is-empty" aria-hidden="true">{form.name?.trim().slice(0, 1).toUpperCase() || 'A'}</span>}
+      <div className="test-business-live-tags">{categoryName && <span>{categoryName}</span>}<span>{form.businessMode || 'online'}</span></div>
+      <h2>{form.name || 'Your business name'}</h2>
+      <div className={`test-business-verification-panel ${verifiedBusiness ? 'is-verified' : 'is-preview'}`} aria-label={verifiedBusiness ? 'Verified business badge' : 'Verified business badge design preview'}>
+        <span className="test-verification-mark" aria-hidden="true">✓</span>
+        <div><strong>Verified business</strong><span>{verifiedBusiness ? 'Verified by Aarambh' : 'Badge design preview'}</span></div>
+        {!verifiedBusiness && <p>Illustrative only. Aarambh reviews verification; this editor cannot award a badge.</p>}
+      </div>
+      <p className="test-business-live-tagline">{form.tagline || 'Your short introduction will appear here.'}</p>
+      <p>{form.description || 'Add a description to introduce your business and what makes it distinct.'}</p>
+      {location && <p className="test-business-live-location">{location}</p>}
+      {form.foundedYear && <p className="test-business-live-location">Founded {form.foundedYear}</p>}
+      <div className="test-business-live-links">{[
+        ['Website', form.websiteUrl], ['Instagram', form.instagramUrl], ['WhatsApp', form.whatsappUrl],
+        ['Quote', form.quoteUrl], ['Demo', form.demoUrl], ['Store', form.storeUrl],
+        ['Call', form.contactPhone], ['Email', form.contactEmail]
+      ].filter(([, href]) => href).map(([label]) => <span key={label}>{label}</span>)}</div>
+      {configuredDays > 0 && <p className="test-business-live-location">Hours set for {configuredDays} day{configuredDays === 1 ? '' : 's'} · India time</p>}
+      <small>Live preview · save edits before publishing.</small>
+    </div>
+  </article>
+
   if (!user) return <section className="test-content-width test-feature-page"><Heading eyebrow="OWNER PROFILE" title="Business profile" /><Notice><Link to="/test/account">Sign in to edit a business profile.</Link></Notice></section>
-  return <section className="test-content-width test-feature-page">
-    <Heading eyebrow="OWNER WORKSPACE" title="Update business contact and location" description="Add direct contact links, public location details, and weekly opening hours. Addresses are not geocoded and visitor location is never requested." />
-    {brands.length > 0 ? <form className="test-workspace-card test-profile-form" onSubmit={event => void submit(event)}>
-      <label className="test-field"><span>Business</span><select value={selected} onChange={event => setSelected(event.target.value)}>{brands.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-      <div className="test-form-grid">{[['city', 'City'], ['area', 'Area / neighbourhood'], ['address', 'Public address'], ['latitude', 'Latitude'], ['longitude', 'Longitude'], ['contactPhone', 'Public phone'], ['contactEmail', 'Public contact email'], ['websiteUrl', 'Website (HTTPS)'], ['whatsappUrl', 'WhatsApp link (HTTPS)'], ['quoteUrl', 'Request a quote (HTTPS)'], ['demoUrl', 'Book a demo (HTTPS)'], ['storeUrl', 'Visit store (HTTPS)']].map(([key, label]) => <label className="test-field" key={key}><span>{label}</span><input value={form[key] || ''} onChange={event => set(key, event.target.value)} placeholder={key.endsWith('Url') ? 'https://sample.invalid/…' : ''} /></label>)}</div>
-      <label className="test-field"><span>Operating type</span><select value={form.businessMode || 'online'} onChange={event => set('businessMode', event.target.value)}><option value="online">Online</option><option value="physical">Physical</option><option value="hybrid">Hybrid</option></select></label>
-      <OpeningHoursEditor value={hours} onChange={setHours} />
-      <p className="test-muted">Set each day to open, closed, or not set. Open-now discovery evaluates these hours in Asia/Kolkata.</p>
-      <div className="test-action-row"><button className="test-button test-button-primary" disabled={busy}>Save profile</button><Link className="test-inline-link" to="/test/workspace">Founder workspace</Link></div>{notice && <Notice>{notice}</Notice>}
-    </form> : <Notice>Create a business in the <Link to="/test/workspace">founder workspace</Link> first.</Notice>}
+  return <section className="test-content-width test-feature-page test-profile-editor test-business-editor">
+    <Heading eyebrow="OWNER WORKSPACE" title="Business profile" description="Shape how customers discover your business: identity, story, location, contact options, and weekly hours. Changes stay in draft until you publish them." />
+    {loading ? <Notice>Loading your business profiles…</Notice> : brands.length ? <div className="test-profile-editor-layout">
+      <form className="test-workspace-card test-profile-form test-business-profile-form" onSubmit={event => void submit(event)}>
+        <div className="test-profile-card-header"><div><span className="test-eyebrow">BUSINESS EDITOR</span><h2>{selectedBrand?.name || 'Your business'}</h2></div><span className={`test-profile-status is-${status.replaceAll(' ', '-')}`}>{status}</span></div>
+        {brands.length > 1 && <label className="test-field"><span>Business</span><select value={selected} onChange={event => chooseBrand(event.target.value)}>{brands.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>}
+        <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>01</span><div><h3>Identity &amp; story</h3><p>Give people a clear first impression.</p></div></div>
+          <label className="test-field"><span>Business name</span><input required maxLength={100} value={form.name || ''} onChange={event => set('name', event.target.value)} /></label>
+          <div className="test-form-grid"><label className="test-field"><span>Category</span><select value={form.category || ''} onChange={event => set('category', event.target.value)}><option value="">Choose a category</option>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+            <label className="test-field"><span>Tagline</span><input maxLength={160} value={form.tagline || ''} onChange={event => set('tagline', event.target.value)} placeholder="A short introduction" /></label></div>
+          <label className="test-field"><span>Business description</span><textarea rows={4} maxLength={1000} value={form.description || ''} onChange={event => set('description', event.target.value)} placeholder="Tell customers what your business does." /><small aria-live="polite">{(form.description || '').length}/1000</small></label>
+          <div className="test-profile-upload-row">{form.logoUrl ? <img src={form.logoUrl} alt="Current business logo" /> : <span className="test-profile-upload-placeholder">{form.name?.slice(0, 1).toUpperCase() || 'B'}</span>}<div><strong>Business logo</strong><p>Upload a JPEG, PNG, or WebP image up to 5 MiB.</p><input ref={logoInput} className="test-profile-file-input" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose business logo" onChange={event => void uploadLogo(event.target.files?.[0])} /><button type="button" className="test-button test-button-secondary" disabled={uploading} onClick={() => logoInput.current?.click()}>{uploading ? 'Uploading…' : form.logoUrl ? 'Replace logo' : 'Upload logo'}</button></div></div>
+        </section>
+        <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>02</span><div><h3>Cover &amp; gallery</h3><p>Shape the imagery in your public profile preview.</p></div></div>
+          <label className="test-field"><span>Cover image URL (preview only)</span><input type="text" inputMode="url" pattern="(https://.+|/images/.+)?" title="Use an HTTPS URL or a local /images/ path." value={mediaPreview.coverUrl} onChange={event => setMediaPreview(old => ({ ...old, coverUrl: event.target.value }))} placeholder="https://example.invalid/cover.webp" /></label>
+          <label className="test-field"><span>Gallery image URLs (one per line, preview only)</span><textarea rows={3} maxLength={1200} value={mediaPreview.galleryUrls} onChange={event => setMediaPreview(old => ({ ...old, galleryUrls: event.target.value }))} placeholder="https://example.invalid/image.webp" /></label>
+          <p className="test-profile-preview-only-note" role="note">These controls update the preview only. Cover and gallery media are not saved by the current profile API.</p>
+        </section>
+        <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>03</span><div><h3>Location &amp; hours</h3><p>Set the public location and how customers can visit.</p></div></div>
+          <div className="test-form-grid">{[['city', 'City'], ['state', 'State'], ['area', 'Area / neighbourhood'], ['address', 'Public address']].map(([key, label]) => <label className="test-field" key={key}><span>{label}</span><input maxLength={key === 'address' ? 300 : key === 'area' ? 100 : 80} value={form[key] || ''} onChange={event => set(key, event.target.value)} /></label>)}
+            <label className="test-field"><span>Founded year</span><input type="number" min={1800} max={new Date().getFullYear()} step={1} value={form.foundedYear || ''} onChange={event => set('foundedYear', event.target.value)} /></label>
+            <label className="test-field"><span>Operating type</span><select value={form.businessMode || 'online'} onChange={event => set('businessMode', event.target.value)}><option value="online">Online</option><option value="physical">Physical</option><option value="hybrid">Hybrid</option></select></label>
+            <label className="test-field"><span>Latitude</span><input type="number" min={-90} max={90} step="any" value={form.latitude || ''} onChange={event => set('latitude', event.target.value)} /></label>
+            <label className="test-field"><span>Longitude</span><input type="number" min={-180} max={180} step="any" value={form.longitude || ''} onChange={event => set('longitude', event.target.value)} /></label>
+          </div>
+          <OpeningHoursEditor value={hours} onChange={setHours} />
+          <p className="test-muted">Set each day to open, closed, or not set. Open-now discovery evaluates these hours in Asia/Kolkata.</p>
+        </section>
+        <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>04</span><div><h3>Contact &amp; links</h3><p>Give people a direct path to your business.</p></div></div>
+          <div className="test-form-grid">{[['contactPhone', 'Public phone'], ['contactEmail', 'Public contact email'], ['websiteUrl', 'Website (HTTPS)'], ['instagramUrl', 'Instagram (HTTPS)'], ['whatsappUrl', 'WhatsApp link (HTTPS)'], ['quoteUrl', 'Request a quote (HTTPS)'], ['demoUrl', 'Book a demo (HTTPS)'], ['storeUrl', 'Visit store (HTTPS)']].map(([key, label]) => <label className="test-field" key={key}><span>{label}</span><input type={key.endsWith('Url') ? 'url' : key === 'contactEmail' ? 'email' : key === 'contactPhone' ? 'tel' : 'text'} pattern={key.endsWith('Url') ? 'https://.+' : key === 'contactPhone' ? '\\+?[0-9 \\(\\)\\-]{7,25}' : undefined} title={key.endsWith('Url') ? 'Use a valid HTTPS URL.' : key === 'contactPhone' ? 'Use 7–25 characters: digits, spaces, parentheses, hyphens, and an optional leading +.' : undefined} maxLength={key === 'contactPhone' ? 25 : key === 'contactEmail' ? 254 : undefined} value={form[key] || ''} onChange={event => set(key, event.target.value)} placeholder={key.endsWith('Url') ? 'https://sample.invalid/…' : ''} /></label>)}</div>
+        </section>
+        <div className="test-profile-form-actions"><button type="submit" className="test-button test-button-primary" disabled={busy || uploading}>{busy ? 'Saving…' : 'Save profile'}</button><Link className="test-inline-link" to="/test/workspace">Founder workspace</Link></div>
+        {notice && <Notice error={noticeIsError}>{notice}</Notice>}
+      </form>
+      <aside className="test-profile-editor-aside"><div className="test-profile-aside-heading"><span className="test-eyebrow">LIVE PREVIEW</span><h2>Your public business card</h2><p>Preview reflects current edits. Save before you publish.</p></div>{renderPreview()}
+        <div className="test-profile-publish-panel"><span className={`test-profile-status is-${status.replaceAll(' ', '-')}`}>{status}</span><p>{status === 'published' ? 'Your business is visible on the public discovery pages.' : businessProfileDirty ? 'Save your latest edits before publishing.' : 'Your changes are private until you publish the business.'}</p>
+          <div className="test-profile-control-row"><button type="button" className="test-button test-button-secondary" onClick={() => setPreviewOpen(true)}>Preview profile</button><button type="button" className="test-button test-button-primary" disabled={busy || uploading || businessProfileDirty || status === 'published' || Boolean(selectedBrand?.moderationLocked)} onClick={() => void publish()}>{busy ? 'Working…' : status === 'published' ? 'Published' : businessProfileDirty ? 'Save changes first' : 'Publish business'}</button></div>
+          {selectedBrand?.moderationLocked && <p className="test-muted">This business is locked and cannot be published from this editor.</p>}
+        </div>
+      </aside>
+      {previewOpen && <div className="test-profile-modal" role="dialog" aria-modal="true" aria-label="Business profile preview"><div className="test-profile-modal-card"><div className="test-profile-modal-heading"><strong>Business profile preview</strong><button type="button" className="test-button test-button-secondary" onClick={() => setPreviewOpen(false)}>Close preview</button></div>{renderPreview(true)}</div></div>}
+    </div> : <Notice>Create a business in the <Link to="/test/workspace">founder workspace</Link> first.</Notice>}
   </section>
 }
 
 export function FounderProfileEditorPage({ user }: { user: User | null }) {
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null)
-  const [fields, setFields] = useState({ displayName: '', bio: '', city: '', state: '', role: '', publicProfile: true })
+  const [ownedBrands, setOwnedBrands] = useState<OwnedProfileBrand[]>([])
+  const [fields, setFields] = useState({ displayName: '', avatarUrl: '', bio: '', city: '', state: '', role: '', pronouns: '', interests: '', instagramUrl: '', publicProfile: true, publicBrandIds: [] as string[] })
   const [notice, setNotice] = useState('')
-  useEffect(() => { if (!user) return; void api<{ item: Record<string, unknown> | null }>('/me/founder-profile').then(result => { setProfile(result.item); if (result.item) setFields({ displayName: String(result.item.displayName || ''), bio: String(result.item.bio || ''), city: String(result.item.city || ''), state: String(result.item.state || ''), role: String(result.item.role || ''), publicProfile: Boolean(result.item.publicProfile) }) }).catch(err => setNotice(message(err))) }, [user?.id])
-  async function submit(event: FormEvent) { event.preventDefault(); try { const result = await api<{ item: Record<string, unknown> }>('/me/founder-profile', { method: 'PATCH', body: body({ profile: fields }) }); setProfile(result.item); setNotice('Founder profile updated.') } catch (err) { setNotice(message(err)) } }
+  const [noticeIsError, setNoticeIsError] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const avatarInput = useRef<HTMLInputElement | null>(null)
+  const publishedBrands = ownedBrands.filter(brand => brand.status === 'published')
+  const unavailableLinks = fields.publicBrandIds.filter(id => !publishedBrands.some(brand => brand.id === id))
+  const verifiedFounder = profile?.verified === true || profile?.verificationStatus === 'verified'
+
+  useEffect(() => {
+    if (!user) { setLoading(false); return }
+    let active = true
+    setLoading(true)
+    void Promise.all([
+      api<{ item: Record<string, unknown> | null }>('/me/founder-profile'),
+      api<{ items: OwnedProfileBrand[] }>('/me/brands')
+    ]).then(([result, brandResult]) => {
+      if (!active) return
+      setProfile(result.item)
+      setOwnedBrands(brandResult.items)
+      if (result.item) setFields({
+        displayName: String(result.item.displayName || ''), avatarUrl: String(result.item.avatarUrl || ''), bio: String(result.item.bio || ''),
+        city: String(result.item.city || ''), state: String(result.item.state || ''), role: String(result.item.role || ''),
+        pronouns: String(result.item.pronouns || ''), interests: Array.isArray(result.item.interests) ? result.item.interests.map(String).join(', ') : String(result.item.interests || ''),
+        instagramUrl: String(result.item.instagramUrl || ''), publicProfile: Boolean(result.item.publicProfile),
+        publicBrandIds: Array.isArray(result.item.publicBrandIds) ? result.item.publicBrandIds.map(String) : []
+      })
+    }).catch(err => { if (active) { setNotice(message(err)); setNoticeIsError(true) } }).finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [user?.id])
+
+  function set(key: 'displayName' | 'avatarUrl' | 'bio' | 'city' | 'state' | 'role' | 'pronouns' | 'interests' | 'instagramUrl', value: string) { setFields(old => ({ ...old, [key]: value })) }
+  function toggleBrand(id: string, checked: boolean) {
+    setFields(old => ({ ...old, publicBrandIds: checked ? [...old.publicBrandIds, id] : old.publicBrandIds.filter(item => item !== id) }))
+  }
+  async function uploadAvatar(file?: File) {
+    if (!file) return
+    setUploading(true); setNotice('')
+    try {
+      const asset = await uploadProfileImage(file, 'founder-avatar')
+      set('avatarUrl', asset.url)
+      setNotice('Founder portrait uploaded to temporary preview storage. Save the profile to attach it.')
+      setNoticeIsError(false)
+    } catch (err) { setNotice(message(err)); setNoticeIsError(true) }
+    finally { setUploading(false); if (avatarInput.current) avatarInput.current.value = '' }
+  }
+  async function submit(event: FormEvent) {
+    event.preventDefault(); setBusy(true); setNotice(''); setNoticeIsError(false)
+    try {
+      const payload = {
+        displayName: fields.displayName, avatarUrl: fields.avatarUrl, bio: fields.bio, city: fields.city, state: fields.state,
+        role: fields.role, instagramUrl: fields.instagramUrl, publicProfile: fields.publicProfile,
+        publicBrandIds: fields.publicBrandIds.filter(id => publishedBrands.some(brand => brand.id === id))
+      }
+      const result = await api<{ item: Record<string, unknown> }>('/me/founder-profile', { method: 'PATCH', body: body({ profile: payload }) })
+      setProfile(result.item)
+      setNotice('Founder profile updated.')
+    } catch (err) { setNotice(message(err)); setNoticeIsError(true) }
+    finally { setBusy(false) }
+  }
+  const renderPreview = (expanded = false) => <article className={`test-profile-live-card test-founder-live-card ${expanded ? 'is-expanded' : ''}`}>
+    <div className="test-founder-live-top"><span className="test-founder-live-label">FOUNDER PROFILE</span><span className={`test-profile-status ${fields.publicProfile ? 'is-public' : 'is-private'}`}>{fields.publicProfile ? 'Public' : 'Private'}</span></div>
+    <div className="test-founder-live-identity">{fields.avatarUrl ? <img className="test-founder-live-avatar" src={fields.avatarUrl} alt={`${fields.displayName || 'Founder'} portrait preview`} /> : <span className="test-founder-live-avatar is-empty" aria-hidden="true">{fields.displayName.trim().slice(0, 1).toUpperCase() || 'F'}</span>}
+      <div><h2>{fields.displayName || 'Your name'}</h2><p>{[fields.role || 'Founder', fields.pronouns].filter(Boolean).join(' · ')}</p></div></div>
+    <div className={`test-founder-verification-panel ${verifiedFounder ? 'is-verified' : 'is-preview'}`} aria-label={verifiedFounder ? 'Verified founder badge' : 'Verified founder badge design preview'}>
+      <span className="test-verification-mark" aria-hidden="true">✓</span>
+      <div><strong>Verified founder</strong><span>{verifiedFounder ? 'Verified by Aarambh' : 'Badge design preview'}</span></div>
+      {!verifiedFounder && <p>Illustrative only. Aarambh reviews verification; this editor cannot award a badge.</p>}
+    </div>
+    <p className="test-founder-live-bio">{fields.bio || 'Your founder story will appear here.'}</p>
+    {fields.interests.split(',').map(item => item.trim()).filter(Boolean).length > 0 && <div className="test-founder-live-interests" aria-label="Founder interests">{fields.interests.split(',').map(item => item.trim()).filter(Boolean).slice(0, 8).map(interest => <span key={interest}>{interest}</span>)}</div>}
+    {(fields.city || fields.state) && <p className="test-business-live-location">{[fields.city, fields.state].filter(Boolean).join(', ')}</p>}
+    {fields.instagramUrl && <a className="test-founder-live-social" href={fields.instagramUrl} target="_blank" rel="noopener noreferrer">Instagram profile ↗</a>}
+    <div className="test-founder-live-brands"><span className="test-eyebrow">LINKED BUSINESSES</span>{fields.publicProfile && fields.publicBrandIds.length ? fields.publicBrandIds.map(id => {
+      const brand = ownedBrands.find(item => item.id === id)
+      return brand && brand.status === 'published' ? <span className="test-founder-live-brand" key={id}>{brand.name}</span> : null
+    }) : <p>{fields.publicProfile ? 'No public businesses linked yet.' : 'Your linked businesses are hidden while this profile is private.'}</p>}</div>
+  </article>
+
   if (!user) return <section className="test-content-width test-feature-page"><Heading eyebrow="FOUNDER PROFILE" title="Update your profile" /><Notice><Link to="/test/account">Sign in to edit your founder profile.</Link></Notice></section>
-  return <section className="test-content-width test-feature-page"><Heading eyebrow="FOUNDER WORKSPACE" title="Update founder profile" description="Keep your public founder introduction current. The account email remains private." />{profile ? <form className="test-workspace-card test-profile-form" onSubmit={event => void submit(event)}><div className="test-form-grid">{(['displayName', 'city', 'state', 'role'] as const).map(key => <label className="test-field" key={key}><span>{key === 'displayName' ? 'Display name' : key[0].toUpperCase() + key.slice(1)}</span><input value={fields[key]} onChange={event => setFields(old => ({ ...old, [key]: event.target.value }))} /></label>)}</div><label className="test-field"><span>Short bio</span><textarea rows={4} maxLength={500} value={fields.bio} onChange={event => setFields(old => ({ ...old, bio: event.target.value }))} /></label><label className="test-check"><input type="checkbox" checked={fields.publicProfile} onChange={event => setFields(old => ({ ...old, publicProfile: event.target.checked }))} />Show public founder profile</label><button className="test-button test-button-primary">Save founder profile</button>{notice && <Notice>{notice}</Notice>}</form> : <Notice>Create your founder profile in the <Link to="/test/workspace">founder workspace</Link> first.</Notice>}</section>
+  return <section className="test-content-width test-feature-page test-profile-editor test-founder-editor">
+    <Heading eyebrow="FOUNDER WORKSPACE" title="Founder profile" description="Make your public founder introduction feel like you. Your account email stays private." />
+    {loading ? <Notice>Loading your founder profile…</Notice> : profile ? <div className="test-profile-editor-layout">
+      <form className="test-workspace-card test-profile-form test-founder-profile-form" onSubmit={event => void submit(event)}>
+        <div className="test-profile-card-header"><div><span className="test-eyebrow">PROFILE EDITOR</span><h2>About you</h2></div><span className={`test-profile-status ${fields.publicProfile ? 'is-public' : 'is-private'}`}>{fields.publicProfile ? 'Public profile' : 'Private profile'}</span></div>
+        <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>01</span><div><h3>Your identity</h3><p>Set your name, role, and public portrait.</p></div></div>
+          <label className="test-field"><span>Display name</span><input required maxLength={80} value={fields.displayName} onChange={event => set('displayName', event.target.value)} /><small aria-live="polite">{fields.displayName.length}/80</small></label>
+          <div className="test-form-grid"><label className="test-field"><span>Role</span><input maxLength={80} value={fields.role} onChange={event => set('role', event.target.value)} placeholder="Founder, designer, maker…" /></label><label className="test-field"><span>Pronouns (preview only)</span><input maxLength={40} value={fields.pronouns} onChange={event => set('pronouns', event.target.value)} placeholder="e.g. she/her" /></label><label className="test-field"><span>City</span><input maxLength={80} value={fields.city} onChange={event => set('city', event.target.value)} /></label><label className="test-field"><span>State</span><input maxLength={80} value={fields.state} onChange={event => set('state', event.target.value)} /></label></div>
+          <div className="test-profile-upload-row">{fields.avatarUrl ? <img className="is-round" src={fields.avatarUrl} alt="Current founder portrait" /> : <span className="test-profile-upload-placeholder is-round">{fields.displayName.trim().slice(0, 1).toUpperCase() || 'F'}</span>}<div><strong>Portrait</strong><p>Upload a JPEG, PNG, or WebP image up to 5 MiB.</p><input ref={avatarInput} className="test-profile-file-input" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose founder portrait" onChange={event => void uploadAvatar(event.target.files?.[0])} /><button type="button" className="test-button test-button-secondary" disabled={uploading} onClick={() => avatarInput.current?.click()}>{uploading ? 'Uploading…' : fields.avatarUrl ? 'Replace portrait' : 'Upload portrait'}</button></div></div>
+        </section>
+        <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>02</span><div><h3>Your story</h3><p>Tell visitors what you are building and why.</p></div></div>
+          <label className="test-field"><span>Short bio</span><textarea rows={5} maxLength={500} value={fields.bio} onChange={event => set('bio', event.target.value)} /><small aria-live="polite">{fields.bio.length}/500</small></label>
+          <label className="test-field"><span>Interests (preview only)</span><textarea rows={2} maxLength={240} value={fields.interests} onChange={event => set('interests', event.target.value)} placeholder="Ceramics, slow design, textiles" /><small>Separate interests with commas.</small></label>
+          <p className="test-profile-preview-only-note" role="note">Pronouns and interests update this preview only; the current profile API does not save these fields.</p>
+          <label className="test-field"><span>Instagram profile (HTTPS)</span><input type="url" pattern="https://.+" title="Use a valid HTTPS URL." value={fields.instagramUrl} onChange={event => set('instagramUrl', event.target.value)} placeholder="https://instagram.com/…" /></label>
+        </section>
+        <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>03</span><div><h3>Linked businesses</h3><p>Choose published businesses that should appear with your founder profile.</p></div></div>
+          {publishedBrands.length ? <fieldset className="test-founder-business-picker"><legend>Public businesses</legend>{publishedBrands.map(brand => <label className="test-check" key={brand.id}><input type="checkbox" checked={fields.publicBrandIds.includes(brand.id)} disabled={!fields.publicBrandIds.includes(brand.id) && fields.publicBrandIds.length >= 50} onChange={event => toggleBrand(brand.id, event.target.checked)} /><span>{brand.name}</span></label>)}</fieldset> : <p className="test-profile-empty-links">Publish a business first to link it to your public founder profile.</p>}
+          {unavailableLinks.length > 0 && <p className="test-profile-link-warning">{unavailableLinks.length} previously linked business{unavailableLinks.length === 1 ? ' is' : 'es are'} no longer published. Those links will be removed when you save.</p>}
+        </section>
+        <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>04</span><div><h3>Visibility</h3><p>Control whether this founder introduction is public.</p></div></div><label className="test-check test-founder-visibility"><input type="checkbox" checked={fields.publicProfile} onChange={event => setFields(old => ({ ...old, publicProfile: event.target.checked }))} /><span>Show public founder profile</span></label></section>
+        <div className="test-profile-form-actions"><button type="submit" className="test-button test-button-primary" disabled={busy || uploading || !fields.displayName.trim()}>{busy ? 'Saving…' : 'Save founder profile'}</button><button type="button" className="test-button test-button-secondary" onClick={() => setPreviewOpen(true)}>Preview profile</button></div>
+        {notice && <Notice error={noticeIsError}>{notice}</Notice>}
+      </form>
+      <aside className="test-profile-editor-aside"><div className="test-profile-aside-heading"><span className="test-eyebrow">LIVE PREVIEW</span><h2>Your public founder card</h2><p>Preview reflects current edits and visibility.</p></div>{renderPreview()}</aside>
+      {previewOpen && <div className="test-profile-modal" role="dialog" aria-modal="true" aria-label="Founder profile preview"><div className="test-profile-modal-card"><div className="test-profile-modal-heading"><strong>Founder profile preview</strong><button type="button" className="test-button test-button-secondary" onClick={() => setPreviewOpen(false)}>Close preview</button></div>{renderPreview(true)}</div></div>}
+    </div> : <Notice>Create your founder profile in the <Link to="/test/workspace">founder workspace</Link> first.</Notice>}
+  </section>
 }

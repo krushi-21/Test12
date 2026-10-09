@@ -171,6 +171,15 @@ try {
 
   await client.send('Page.navigate', { url: `${origin}/test/workspace` })
   await waitFor(() => evaluate('Boolean(document.querySelector(".test-workspace-page"))'), Boolean, 'founder workspace')
+  await waitFor(() => evaluate(`(() => {
+    const page = document.querySelector('.test-workspace-page')
+    const welcome = page?.querySelector('.test-workspace-welcome')
+    const overview = page?.querySelector('.test-workspace-overview')
+    const shortcuts = overview?.querySelector('.test-workspace-shortcuts')
+    const recent = overview?.querySelector('[data-testid="workspace-recent-launches"]')
+    const management = page?.querySelector('.test-workspace-management')
+    return Boolean(welcome?.querySelector('h1')?.textContent.includes('Welcome back') && shortcuts?.querySelectorAll('.test-workspace-shortcut-group').length >= 4 && recent?.querySelector('h2')?.textContent.includes('Recent launches') && management && page.children[0] === welcome && page.children[1] === overview)
+  })()`), Boolean, 'workspace welcome dashboard, shortcuts, recent activity and management hierarchy')
   await waitFor(() => evaluate(`(() => { const card = [...document.querySelectorAll('.test-workspace-card')].find(item => item.innerText.includes('Launches and drafts')); return card?.innerText.includes('Choose a brand above to load its launches.') && !card.innerText.includes('No launch records for this synthetic brand yet.') })()`), Boolean, 'no-brand prompt before brands finish loading')
   await waitFor(() => evaluate(`(() => { const card = [...document.querySelectorAll('.test-workspace-card')].find(item => item.innerText.includes('Launches and drafts')); return card?.innerText.includes('Loading launches for this brand…') && !card.innerText.includes('No launch records for this synthetic brand yet.') })()`), Boolean, 'launch loading state during delayed owner-brand request')
   await waitFor(() => evaluate('Boolean(document.querySelector(".test-launch-manager-list"))'), Boolean, 'launch management list')
@@ -200,6 +209,7 @@ try {
   await waitFor(() => evaluate('document.body.innerText.includes("sample launch image uploaded")'), Boolean, 'synthetic launch image upload')
   await clickButton('Create launch draft', launchCardSelector)
   await waitFor(() => evaluate(`[...document.querySelectorAll('.test-launch-manager-item')].some(item => item.innerText.includes(${JSON.stringify(initialTitle)}))`), Boolean, 'launch draft creation')
+  await waitFor(() => evaluate(`document.querySelector('[data-testid="workspace-recent-launches"] .test-workspace-recent-item')?.innerText.includes(${JSON.stringify(initialTitle)})`), Boolean, 'new synthetic launch displayed in recent activity summary')
   await waitForApiAction('POST', '/api/me/brands/' + encodeURIComponent(brandValue) + '/launches')
 
   await clickLaunchButton(initialTitle, 'Edit draft')

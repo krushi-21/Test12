@@ -112,8 +112,6 @@ export function LaunchLifecyclePage() {
 
   useEffect(() => {
     let active = true
-    setLoading(true)
-    setLoadError('')
     void fetchUpcomingLaunches()
       .then(result => { if (active) { setLaunches(result); setLoadError('') } })
       .catch(error => { if (active) setLoadError(requestError(error)) })
@@ -157,6 +155,11 @@ export function LaunchLifecyclePage() {
     setSelectedDay(1)
     setReminderError('')
   }
+  const retryUpcoming = () => {
+    setLoading(true)
+    setLoadError('')
+    setReloadKey(current => current + 1)
+  }
   const toggleReminder = async (launch: Launch) => {
     const current = lifecycle[launch.slug]
     if (!current) return
@@ -196,7 +199,7 @@ export function LaunchLifecyclePage() {
       <aside className="growth-agenda" aria-label="Selected date agenda">
         <div className="growth-agenda-heading"><span>SELECTED DATE</span><h2>{shortDate(selectedDate)}</h2></div>
         {loading && <div className="growth-agenda-empty" role="status"><strong>Loading scheduled launches</strong><p>Checking the live calendar.</p></div>}
-        {loadError && <div className="growth-api-message is-error" role="alert"><span>{loadError}</span><button type="button" className="growth-retry-button" onClick={() => setReloadKey(current => current + 1)}>Try again</button></div>}
+        {loadError && <div className="growth-api-message is-error" role="alert"><span>{loadError}</span><button type="button" className="growth-retry-button" onClick={retryUpcoming}>Try again</button></div>}
         {!loading && !loadError && selectedEvents.length ? selectedEvents.map(launch => {
           const status = lifecycle[launch.slug]
           return <article className={`growth-agenda-card${launch.images?.[0]?.url ? ' has-image' : ''}`} key={launch.slug}>
@@ -287,8 +290,6 @@ export function GrowthTrendingPage() {
   const [retryKey, setRetryKey] = useState(0)
   useEffect(() => {
     let active = true
-    setLoading(true)
-    setError('')
     void api<TrendingResponse>('/trending/dashboard')
       .then(result => { if (active) { setData(result); setError('') } })
       .catch(err => { if (active) setError(requestError(err)) })
@@ -306,10 +307,10 @@ export function GrowthTrendingPage() {
   const risingBusinesses = data?.risingBusinesses || []
   return <section className="growth-page-wrap growth-trending-page">
     <div className="growth-trending-layout"><main className="growth-trending-main">
-      <PageHeading eyebrow="COMMUNITY DISCOVERY" title="What India is noticing" description="Explore the launches and local businesses drawing recent community activity." />
+      <PageHeading eyebrow="COMMUNITY DISCOVERY" title="What the community is noticing" description="Explore the launches and local businesses drawing recent community activity." />
       <div className="growth-tabs" role="tablist" aria-label="Trending activity range">{tabs.map(tab => <button type="button" role="tab" aria-selected={period === tab.value} className={period === tab.value ? 'is-active' : ''} key={tab.value} onClick={() => setPeriod(tab.value)}>{tab.label}</button>)}</div>
       {loading && <div className="growth-api-message" role="status">Loading community activity…</div>}
-      {error && <div className="growth-api-message is-error" role="alert"><span>{error}</span><button type="button" className="growth-retry-button" onClick={() => setRetryKey(current => current + 1)}>Try again</button></div>}
+      {error && <div className="growth-api-message is-error" role="alert"><span>{error}</span><button type="button" className="growth-retry-button" onClick={() => { setLoading(true); setError(''); setRetryKey(current => current + 1) }}>Try again</button></div>}
       {!loading && !error && period !== 'risingBusinesses' && <>
         {launches?.length ? <ol className="growth-trending-list">{launches.map((launch, index) => <li key={launch.id} className={index === 0 ? 'is-featured' : ''}>
           <span className="growth-trend-rank">{String(launch.rank || index + 1).padStart(2, '0')}</span><span className="growth-trend-accent" aria-hidden="true" /><div className="growth-trend-copy"><Link to={`/test/launch/${encodeURIComponent(launch.slug)}?source=trending`} className="growth-trend-title">{launch.title}</Link><span>{launch.brandName} · {[launch.city, launch.category].filter(Boolean).join(' · ') || 'India'} · {launch.score} activity points</span></div><Link to={`/test/launch/${encodeURIComponent(launch.slug)}?source=trending`} className="growth-trend-open" aria-label={`Open ${launch.title}`}><ArrowRight size={17} aria-hidden="true" /></Link>
@@ -365,8 +366,6 @@ export function GrowthNotificationsPage() {
   }
   useEffect(() => {
     let active = true
-    setLoading(true)
-    setError('')
     void api<NotificationsResponse>('/me/notifications')
       .then(result => { if (active) { setItems(result.items); setUnreadCount(result.unreadCount); setNextCursor(result.nextCursor || null); setError(''); setAuthRequired(false) } })
       .catch(err => { if (active) { setError(requestError(err)); setAuthRequired(isAuthError(err)) } })
@@ -404,7 +403,7 @@ export function GrowthNotificationsPage() {
       <div className="growth-notification-toolbar"><span>RECENT UPDATES</span><button type="button" onClick={() => void markAll()} disabled={!unreadCount || markingAll}>{markingAll ? 'Marking…' : 'Mark all as read'}</button></div>
       <div className="growth-notification-filters" role="group" aria-label="Filter notifications">{notificationFilters.map(option => <button type="button" key={option.value} aria-pressed={filter === option.value} onClick={() => setFilter(option.value)}>{option.label}</button>)}</div>
       {loading && <div className="growth-api-message" role="status">Loading your notifications…</div>}
-      {error && <div className="growth-api-message is-error" role="alert"><span>{error}</span>{authRequired && <Link to="/test/account">Sign in to view your notifications.</Link>}<button type="button" className="growth-retry-button" onClick={() => setReloadKey(current => current + 1)}>Try again</button></div>}
+      {error && <div className="growth-api-message is-error" role="alert"><span>{error}</span>{authRequired && <Link to="/test/account">Sign in to view your notifications.</Link>}<button type="button" className="growth-retry-button" onClick={() => { setLoading(true); setError(''); setReloadKey(current => current + 1) }}>Try again</button></div>}
       {!loading && !error && filteredItems.length > 0 && <div className="growth-notification-list">{filteredItems.map(item => <article className={`growth-notification-row ${kindTone(item.kind)}${item.readAt ? '' : ' is-unread'}`} key={item.id}>
         <span className="growth-notification-icon" aria-hidden="true">{item.readAt ? <Check size={16} /> : /launch|reminder/u.test(item.kind) ? <CalendarDays size={16} /> : <Bell size={16} />}</span><div className="growth-notification-copy"><span className="growth-notification-kind">{item.kind.replaceAll('_', ' ')}</span><h2>{item.subject}</h2><p>{item.message}</p><time dateTime={item.createdAt}>{notificationDate(item.createdAt)}</time></div>{!item.readAt && <button type="button" className="growth-mark-read" onClick={() => void markOne(item.id)} disabled={busyId === item.id} aria-label={`Mark as read: ${item.subject}`}>{busyId === item.id ? 'Saving…' : <><Check size={14} aria-hidden="true" /> Mark read</>}</button>}
       </article>)}</div>}

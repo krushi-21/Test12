@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { CommunityProfilePage } from '../src/pages-community'
 import { CollectionsPage, ForYouPage, FollowingPage, ReviewsSection } from '../src/test-features'
 import { InteractiveTestMode } from '../src/test-mode'
@@ -102,8 +102,14 @@ function previewPath() {
   return '/test/nearby'
 }
 export function Harness() {
-  if (testCase.startsWith('for-you-')) return <MemoryRouter initialEntries={['/test/for-you']}><ForYouPage /></MemoryRouter>
-  if (testCase === 'following-regression') return <MemoryRouter initialEntries={['/test/following']}><FollowingPage user={{ id: 'synthetic-verified-member', displayName: 'Synthetic Member', email: 'member@example.invalid', emailVerified: true }} /></MemoryRouter>
+  if (testCase.startsWith('for-you-') || testCase.startsWith('feed-switch-') || testCase === 'following-regression') {
+    const initialPath = testCase === 'feed-switch-following' || testCase === 'following-regression' ? '/test/following' : '/test/for-you'
+    const feedUser = isSignedOutCase ? null : sessionUser
+    return <MemoryRouter initialEntries={[initialPath]}><Routes>
+      <Route path="/test/for-you" element={<ForYouPage />} />
+      <Route path="/test/following" element={<FollowingPage user={feedUser} />} />
+    </Routes></MemoryRouter>
+  }
   if (testCase) return <MemoryRouter initialEntries={[previewPath()]}><InteractiveTestMode /></MemoryRouter>
   return <MemoryRouter initialEntries={['/test/community-ui-harness']}>
     <main data-testid="community-ui-test-ready">

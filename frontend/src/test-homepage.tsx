@@ -24,6 +24,61 @@ type HomeFounder = { id: string; slug: string; displayName: string; bio?: string
 type PublicCollection = { id: string; name: string; description?: string; isPublic: boolean; shareUrl?: string; launchCount: number; launches: Launch[] }
 type ApiError = { error?: { message?: string } }
 
+const FOUNDER_PORTRAIT_FALLBACK = '/images/aarambh-home-hero.jpg'
+type FounderPageArtwork = { src: string; altText: string; fallbackSrc?: string; fallbackAltText?: string }
+const FOUNDER_LAUNCH_ARTWORK: Record<string, { src: string; altText: string }> = {
+  'miti-handwoven-home-textiles': { src: '/images/launch-textile.jpg', altText: 'Textile stitching at an artisan work table' },
+  'miti-woven-lighting': { src: '/images/launch-craft.webp', altText: 'A synthetic artisan craft collage with woven textiles and pottery' },
+  'miti-artisan-tableware': { src: '/images/growth-maker.jpg', altText: 'A maker shaping pottery in a workshop' },
+}
+
+function founderPageArtwork(launch: Launch, launches: Launch[]): FounderPageArtwork {
+  const image = launch.images?.find(candidate => candidate.url && !launches.some(other =>
+    other.id !== launch.id && other.images?.some(otherImage => otherImage.url === candidate.url)))
+  const fallback = FOUNDER_LAUNCH_ARTWORK[launch.slug]
+  if (image) return {
+    src: image.url,
+    altText: image.altText || `Image for ${launch.title}`,
+    fallbackSrc: fallback?.src,
+    fallbackAltText: fallback?.altText,
+  }
+  return fallback || { src: '', altText: '' }
+}
+
+function FounderPageImage({ artwork, empty }: { artwork: FounderPageArtwork; empty: ReactNode }) {
+  const [failedSource, setFailedSource] = useState('')
+  const source = failedSource
+    ? failedSource === artwork.src && artwork.fallbackSrc ? artwork.fallbackSrc : ''
+    : artwork.src
+  if (!source) return <>{empty}</>
+  const usingFallback = Boolean(failedSource && source === artwork.fallbackSrc)
+  return <img
+    src={source}
+    alt={usingFallback ? artwork.fallbackAltText || artwork.altText : artwork.altText}
+    loading="lazy"
+    onError={() => setFailedSource(source)}
+  />
+}
+
+function FounderPortrait({ founder }: { founder: HomeFounder }) {
+  const portraitSource = founder.avatarUrl || FOUNDER_PORTRAIT_FALLBACK
+  const [failedSource, setFailedSource] = useState('')
+  const source = !failedSource ? portraitSource
+    : failedSource === portraitSource && portraitSource !== FOUNDER_PORTRAIT_FALLBACK ? FOUNDER_PORTRAIT_FALLBACK : ''
+  return <span className="home-founder-avatar home-founder-avatar-large">
+    {source
+      ? <img src={source} alt={source === FOUNDER_PORTRAIT_FALLBACK ? 'Illustrative synthetic artisan portrait' : `${founder.displayName} profile image`} onError={() => setFailedSource(source)} />
+      : <span aria-hidden="true">{founder.displayName.slice(0, 1)}</span>}
+  </span>
+}
+
+function FounderBusinessLogo({ business }: { business: PublicBusiness }) {
+  const [failed, setFailed] = useState(false)
+  return business.logoUrl && !failed
+    ? <img src={business.logoUrl} alt="" loading="lazy" onError={() => setFailed(true)} />
+    : <Store size={20} aria-hidden="true" />
+}
+
 const cities = ['Ahmedabad', 'Bengaluru', 'Chennai', 'Delhi', 'Hyderabad', 'Jaipur', 'Kolkata', 'Mumbai', 'Pune', 'Surat']
 const cityCenters: Record<string, [number, number]> = {
   Ahmedabad: [23.0225, 72.5714], Jaipur: [26.9124, 75.7873], Mumbai: [19.076, 72.8777], Delhi: [28.6139, 77.209],
@@ -201,7 +256,7 @@ export function AarambhHomepage() {
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
           <span className="home-hero-kicker">THE LOCAL DISCOVERY PLATFORM</span>
-          <h1 id="home-title">Discover India’s next<br />good thing</h1>
+          <h1 id="home-title">Rooted in craft.<br />Made by India.</h1>
           <p>Meet the makers. Explore new launches. Support local.<br />Build a stronger India, together.</p>
           <div className="home-hero-actions"><Link to={locationQuery()} className="home-launch-cta">Explore makers <ArrowRight size={17} aria-hidden="true" /></Link><Link to={locationQuery()} className="home-secondary-cta">Browse nearby <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
           <div className="home-social-proof" aria-label="Discover independent makers close to home">
@@ -358,13 +413,13 @@ export function SyntheticFounderPage({ slug, user }: { slug: string; user: Profi
     {loadedSlug !== slug ? <div className="test-notice">Loading founder profile…</div> : error ? <div className="test-notice test-notice-error">{error}</div> : !currentFounder ? <div className="test-notice">Loading founder profile…</div> : <>
       <header className="home-founder-hero">
         <div className="home-founder-identity">
-          <span className="home-founder-avatar home-founder-avatar-large" aria-hidden="true">{currentFounder.avatarUrl ? <img src={currentFounder.avatarUrl} alt="" /> : currentFounder.displayName.slice(0, 1)}</span>
+          <FounderPortrait key={`${currentFounder.id}:${currentFounder.avatarUrl || ''}`} founder={currentFounder} />
           <div className="home-founder-intro"><span className="test-eyebrow">PUBLIC FOUNDER PROFILE</span><h1>{currentFounder.displayName}</h1>{roleAndLocation && <p className="home-founder-location"><MapPin size={15} aria-hidden="true" />{roleAndLocation}</p>}{currentFounder.bio && <p className="home-founder-bio">{currentFounder.bio}</p>}</div>
         </div>
         <section className="home-founder-current" aria-labelledby="founder-current-heading">
           <h2 id="founder-current-heading">Current business</h2>
           {sectionErrors.business ? <EmptyMessage>{sectionErrors.business}</EmptyMessage> : businesses.length ? <div className="home-founder-business-list">{businesses.map(business => <article className="home-founder-business-card" key={business.id}>
-            <span className="home-founder-business-mark">{business.logoUrl ? <img src={business.logoUrl} alt="" loading="lazy" /> : <Store size={20} aria-hidden="true" />}</span>
+            <span className="home-founder-business-mark"><FounderBusinessLogo key={`${business.id}:${business.logoUrl || ''}`} business={business} /></span>
             <div className="home-founder-business-copy"><h3>{business.name}</h3><p>{business.tagline || [business.area, business.city, business.state].filter(Boolean).join(' · ')}</p><Link className="home-founder-business-link" to={`/test/brand/${encodeURIComponent(business.slug)}`}>View business profile <ArrowUpRight size={15} aria-hidden="true" /></Link></div>
           </article>)}</div> : <EmptyMessage>No current public businesses are connected to this profile.</EmptyMessage>}
         </section>
@@ -376,20 +431,24 @@ export function SyntheticFounderPage({ slug, user }: { slug: string; user: Profi
       <div className="home-founder-section-grid">
         <section className="home-founder-section" aria-labelledby="founder-launches-heading">
           <div className="home-founder-section-heading"><div><span className="test-eyebrow">FROM THIS FOUNDER</span><h2 id="founder-launches-heading">Selected launches</h2></div></div>
-          {sectionErrors.launches ? <EmptyMessage>{sectionErrors.launches}</EmptyMessage> : launches.length ? <div className="home-founder-launch-grid">{launches.map(launch => <article className="home-founder-launch-card" key={launch.id}>
+          {sectionErrors.launches ? <EmptyMessage>{sectionErrors.launches}</EmptyMessage> : launches.length ? <div className="home-founder-launch-grid">{launches.map(launch => {
+            const artwork = founderPageArtwork(launch, launches)
+            return <article className="home-founder-launch-card" key={launch.id}>
             <Link className="home-founder-launch-image" to={`/test/launch/${encodeURIComponent(launch.slug)}`} aria-label={`View ${launch.title}`}>
-              {launch.images?.[0] ? <img src={launch.images[0].url} alt={launch.images[0].altText} loading="lazy" /> : <span><Sparkles size={20} aria-hidden="true" /></span>}
+              <FounderPageImage key={`${artwork.src}:${artwork.fallbackSrc || ''}`} artwork={artwork} empty={<span><Sparkles size={20} aria-hidden="true" /></span>} />
             </Link>
             <div className="home-founder-launch-copy"><span>{launch.category}</span><h3><Link to={`/test/launch/${encodeURIComponent(launch.slug)}`}>{launch.title}</Link></h3>{launch.summary && <p>{launch.summary}</p>}</div>
-          </article>)}</div> : <EmptyMessage>No published launches are connected to this founder yet.</EmptyMessage>}
+          </article>
+          })}</div> : <EmptyMessage>No published launches are connected to this founder yet.</EmptyMessage>}
         </section>
 
         <section className="home-founder-section" aria-labelledby="founder-collections-heading">
           <div className="home-founder-section-heading"><div><span className="test-eyebrow">PUBLICLY SHARED</span><h2 id="founder-collections-heading">Saved collections</h2></div></div>
           {sectionErrors.collections ? <EmptyMessage>{sectionErrors.collections}</EmptyMessage> : relatedCollections.length ? <div className="home-founder-collection-list">{relatedCollections.map(collection => {
-            const preview = collection.launches[0]?.images?.[0]
+            const previewLaunch = collection.launches[0]
+            const preview = previewLaunch ? founderPageArtwork(previewLaunch, launches) : { src: '', altText: '' }
             return <article className="home-founder-collection-card" key={collection.id}>
-              <Link className="home-founder-collection-image" to={collection.shareUrl!} aria-label={`Open ${collection.name}`}>{preview ? <img src={preview.url} alt="" loading="lazy" /> : <Bookmark size={19} aria-hidden="true" />}</Link>
+              <Link className="home-founder-collection-image" to={collection.shareUrl!} aria-label={`Open ${collection.name}`}><FounderPageImage key={`${preview.src}:${preview.fallbackSrc || ''}`} artwork={preview} empty={<Bookmark size={19} aria-hidden="true" />} /></Link>
               <div className="home-founder-collection-copy"><Link to={collection.shareUrl!} className="home-founder-collection-name">{collection.name}</Link><span>{collection.launches.length} related {collection.launches.length === 1 ? 'launch' : 'launches'}</span><Link className="home-founder-collection-link" to={collection.shareUrl!}>View collection <ArrowUpRight size={14} aria-hidden="true" /></Link></div>
             </article>
           })}</div> : <EmptyMessage>No public collections include this founder’s published launches yet.</EmptyMessage>}

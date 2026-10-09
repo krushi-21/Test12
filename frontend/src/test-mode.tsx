@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ArrowUpRight, Bell, Bookmark, CalendarDays, Compass, Home, MapPin, Search, Sparkles, Store, TrendingUp, UserRound, type LucideIcon } from 'lucide-react'
 import './test-mode.css'
 import './discovery-visual.css'
-import { AddToCollection, BusinessDiscoveryPage, BusinessProfileEditorPage, CollectionSharePage, CollectionsPage, ContactActions, FollowBusiness, FollowTarget, FounderDashboardPage, FounderProfileEditorPage, FollowingPage, LifecyclePanel, NotificationsPage, ReviewsSection, TrendingPage, UpcomingPage } from './test-features'
+import { AddToCollection, BusinessDiscoveryPage, BusinessProfileEditorPage, CollectionSharePage, CollectionsPage, ContactActions, FollowBusiness, FollowTarget, ForYouPage, FounderDashboardPage, FounderProfileEditorPage, FollowingPage, LifecyclePanel, NotificationsPage, ReviewsSection, TrendingPage, UpcomingPage } from './test-features'
 import { AarambhHomepage, SyntheticFounderPage } from './test-homepage'
 import { CommunityProfilePage } from './pages-community'
 import { GrowthAnalyticsPage, GrowthNotificationsPage, GrowthTrendingPage, LaunchLifecyclePage } from './pages-growth'
@@ -122,7 +122,7 @@ function activeMobileTabForPath(pathname: string): MobileTabKey | undefined {
   if (path === '/test' || path === '/test/') return 'home'
   if (['/test/saved-businesses', '/test/collections', '/test/collection'].some(route => isRouteFamily(path, route))) return 'saved'
   if (['/test/account', '/test/workspace', '/test/dashboard', '/test/analytics', '/test/business-profile', '/test/founder-profile', '/test/brand', '/test/founder', '/test/samples/analytics'].some(route => isRouteFamily(path, route))) return 'profile'
-  if (['/test/nearby', '/test/launch', '/test/following', '/test/leaderboard', '/test/upcoming', '/test/trending', '/test/samples/community', '/test/samples/launch-calendar', '/test/samples/trending'].some(route => isRouteFamily(path, route))) return 'explore'
+  if (['/test/for-you', '/test/nearby', '/test/launch', '/test/following', '/test/leaderboard', '/test/upcoming', '/test/trending', '/test/samples/community', '/test/samples/launch-calendar', '/test/samples/trending'].some(route => isRouteFamily(path, route))) return 'explore'
   return undefined
 }
 
@@ -504,14 +504,15 @@ function AccountPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [outbox, setOutbox] = useState<ApiMessage[]>([])
+  const [outboxExpanded, setOutboxExpanded] = useState(false)
   const [resetPassword, setResetPassword] = useState('')
   const [notice, setNotice] = useState('')
   const [noticeKind, setNoticeKind] = useState<'success' | 'error' | 'info'>('info')
   const [busy, setBusy] = useState(false)
   const navigate = useNavigate()
   const refreshOutbox = useCallback(async () => {
-    try { setOutbox((await api<{ messages: ApiMessage[] }>('/__test/outbox')).messages) }
-    catch { setOutbox([]) }
+    try { setOutbox((await api<{ messages: ApiMessage[] }>('/__test/outbox')).messages); setOutboxExpanded(true) }
+    catch { setOutbox([]); setOutboxExpanded(true) }
   }, [])
   useEffect(() => {
     let active = true
@@ -566,41 +567,83 @@ function AccountPage() {
     finally { setBusy(false) }
   }
   return <section className="test-content-width test-account-page">
-    <TestPageHeading eyebrow="SYNTHETIC ACCOUNT / SESSION" title="Test account flows" description="Register fictional accounts, consume local verification messages, sign in/out, and test session-protected actions." />
-    {user ? <div className="test-session-card"><div><span className="test-eyebrow">ACTIVE SYNTHETIC SESSION</span><h2>{user.displayName}</h2><p>{user.email} · {user.emailVerified ? 'verified' : 'not verified'}</p></div><div className="test-action-row"><Link className="test-button test-button-primary" to="/test/workspace">Open founder workspace</Link><button type="button" className="test-button test-button-secondary" disabled={busy} onClick={() => void logout()}>Sign out</button></div></div> : <div className="test-account-grid">
-      <form className="test-form-card" onSubmit={event => void submit(event)}>
-        <div className="test-form-tabs"><button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Sign in</button><button type="button" className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Register synthetic account</button></div>
-        {mode === 'register' && <label className="test-field"><span>Fictional display name</span><input required maxLength={80} value={displayName} onChange={event => setDisplayName(event.target.value)} /></label>}
-        <label className="test-field"><span>Synthetic email address</span><input required type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="name@synthetic.example.invalid" /></label>
-        <label className="test-field"><span>{mode === 'register' ? 'New synthetic password (12+ characters)' : 'Synthetic test password'}</span><input required type="password" minLength={mode === 'register' ? 12 : 1} value={password} onChange={event => setPassword(event.target.value)} /></label>
-        <button className="test-button test-button-primary" type="submit" disabled={busy || loading}>{busy ? 'Working…' : mode === 'register' ? 'Create synthetic account' : 'Sign in'}</button>
-        {mode === 'login' && <button className="test-text-button" type="button" disabled={busy} onClick={() => void forgotPassword()}>Create a local password-reset message</button>}
-        <p className="test-muted">Use the seeded fictional accounts or another fictional address ending in <code>.invalid</code>. Never use a real email or password.</p>
-      </form>
-      <aside className="test-seed-accounts"><span className="test-eyebrow">SEEDED SYNTHETIC ACCOUNTS</span><h2>Quick sign-in</h2>
-        <button type="button" className="test-seed-choice" onClick={() => { setEmail('founder@synthetic.example.invalid'); setPassword('TestFounder_2026!'); setMode('login') }}><strong>Founder account</strong><span>founder@synthetic.example.invalid</span><code>TestFounder_2026!</code></button>
-        <button type="button" className="test-seed-choice" onClick={() => { setEmail('member@synthetic.example.invalid'); setPassword('TestMember_2026!'); setMode('login') }}><strong>Member account</strong><span>member@synthetic.example.invalid</span><code>TestMember_2026!</code></button>
-        <p>The founder account owns the seeded brand; use the member account to like/save those launches.</p>
+    {user ? <div className="test-session-card"><div><span className="test-eyebrow">ACTIVE SYNTHETIC SESSION</span><h2>{user.displayName}</h2><p>{user.email} · {user.emailVerified ? 'verified' : 'not verified'}</p></div><div className="test-action-row"><Link className="test-button test-button-primary" to="/test/workspace">Open founder workspace</Link><button type="button" className="test-button test-button-secondary" disabled={busy} onClick={() => void logout()}>Sign out</button></div></div> : <div className="test-account-layout">
+      <aside className="test-account-story">
+        <div className="test-account-story-copy">
+          <span className="test-eyebrow">A COMMUNITY FOR MAKERS AND SUPPORTERS</span>
+          <h1>{mode === 'register' ? 'Join the Aarambh community' : 'Welcome back'}</h1>
+          <p>{mode === 'register' ? 'Meet the people behind thoughtful Indian brands, share what you are building, and find your next source of inspiration.' : 'Sign in to find independent makers, follow the stories you love, and keep up with what is taking shape around you.'}</p>
+          <div className="test-account-story-points"><div><strong>Discover</strong><span>Ideas rooted in craft and community.</span></div><div><strong>Connect</strong><span>Meet the makers shaping what comes next.</span></div></div>
+        </div>
+        <div className="test-account-art"><img src="/images/aarambh-home-hero.jpg" alt="" /><span>Rooted in craft. Made by India.</span></div>
       </aside>
+      <div className="test-account-access">
+        <span className="test-eyebrow">AARAMBH COMMUNITY</span>
+        <h2>{mode === 'register' ? 'Create your account' : 'Sign in to Aarambh'}</h2>
+        <p>{mode === 'register' ? 'Start with a fictional profile for this interactive preview.' : 'Welcome back. Continue with your synthetic test account.'}</p>
+        <form className="test-form-card" onSubmit={event => void submit(event)}>
+          <div className="test-form-tabs"><button type="button" aria-pressed={mode === 'login'} className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Sign in</button><button type="button" aria-pressed={mode === 'register'} className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Register synthetic account</button></div>
+          {mode === 'register' && <label className="test-field"><span>Fictional display name</span><input required maxLength={80} value={displayName} onChange={event => setDisplayName(event.target.value)} /></label>}
+          <label className="test-field"><span>Synthetic email address</span><input required type="email" value={email} onChange={event => setEmail(event.target.value)} placeholder="name@synthetic.example.invalid" /></label>
+          <label className="test-field"><span>{mode === 'register' ? 'New synthetic password (12+ characters)' : 'Synthetic test password'}</span><input required type="password" minLength={mode === 'register' ? 12 : 1} value={password} onChange={event => setPassword(event.target.value)} /></label>
+          <button className="test-button test-button-primary" type="submit" disabled={busy || loading}>{busy ? 'Working…' : mode === 'register' ? 'Create synthetic account' : 'Sign in'}</button>
+          {mode === 'login' && <button className="test-text-button" type="button" disabled={busy} onClick={() => void forgotPassword()}>Create a local password-reset message</button>}
+          <p className="test-muted">Use only a fictional address ending in <code>.invalid</code>. Never enter a real email or password in this preview.</p>
+        </form>
+        <details className="test-seed-accounts"><summary><span className="test-eyebrow">SEEDED SYNTHETIC ACCOUNTS</span><strong>Quick sign-in for QA</strong></summary>
+          <div className="test-seed-account-options"><h3>Choose a fictional account</h3>
+            <button type="button" className="test-seed-choice" onClick={() => { setEmail('founder@synthetic.example.invalid'); setPassword('TestFounder_2026!'); setMode('login') }}><strong>Founder account</strong><span>founder@synthetic.example.invalid</span><code>TestFounder_2026!</code></button>
+            <button type="button" className="test-seed-choice" onClick={() => { setEmail('member@synthetic.example.invalid'); setPassword('TestMember_2026!'); setMode('login') }}><strong>Member account</strong><span>member@synthetic.example.invalid</span><code>TestMember_2026!</code></button>
+            <p>The founder account owns the seeded brand; use the member account to like/save those launches.</p>
+          </div>
+        </details>
+      </div>
     </div>}
     {notice && <Notice kind={noticeKind}>{notice}</Notice>}
-    <section className="test-outbox"><div className="test-section-heading"><div><span className="test-eyebrow">MEMORY-ONLY · SYNTHETIC</span><h2>Local verification / reset messages</h2></div><button className="test-button test-button-secondary" type="button" onClick={() => void refreshOutbox()}>Refresh</button></div>
-      <p>No SMTP, email provider, or mail directory is used. One-time links stay inside this gated test preview.</p>
-      {outbox.length ? outbox.slice().reverse().map((message, index) => {
-        const isVerify = message.verificationUrl?.includes('/verify-email')
-        const isReset = message.verificationUrl?.includes('/reset-password')
-        return <div className="test-outbox-message" key={`${message.createdAt}-${index}`}><div><strong>{message.subject}</strong><span>To fictional address: {message.to}</span></div>
-          {isVerify && <button className="test-button test-button-secondary" type="button" disabled={busy} onClick={() => void verify(message.verificationUrl)}>Consume local verification link</button>}
-          {isReset && <div className="test-reset-row"><input aria-label="New synthetic reset password" type="password" minLength={12} placeholder="New synthetic password (12+ chars)" value={resetPassword} onChange={event => setResetPassword(event.target.value)} /><button className="test-button test-button-secondary" type="button" disabled={busy} onClick={() => void resetFromMessage(message.verificationUrl)}>Use local reset link</button></div>}
-        </div>
-      }) : <Notice>No synthetic messages yet. Register or request a reset to exercise the local outbox.</Notice>}
-    </section>
+    <details className="test-outbox" open={outboxExpanded}>
+      <summary className="test-outbox-summary"><span className="test-eyebrow">MEMORY-ONLY · TEST PREVIEW</span><strong>Local verification / reset messages</strong><span>No SMTP or email provider is used.</span></summary>
+      <div className="test-outbox-content"><div className="test-section-heading"><div><span className="test-eyebrow">SYNTHETIC ACCOUNT TOOLS</span><h2>Messages stay inside this preview</h2></div><button className="test-button test-button-secondary" type="button" onClick={() => void refreshOutbox()}>Refresh</button></div>
+        <p>No mail is sent or stored. One-time links remain inside this disposable test session.</p>
+        {outbox.length ? outbox.slice().reverse().map((message, index) => {
+          const isVerify = message.verificationUrl?.includes('/verify-email')
+          const isReset = message.verificationUrl?.includes('/reset-password')
+          return <div className="test-outbox-message" key={`${message.createdAt}-${index}`}><div><strong>{message.subject}</strong><span>To fictional address: {message.to}</span></div>
+            {isVerify && <button className="test-button test-button-secondary" type="button" disabled={busy} onClick={() => void verify(message.verificationUrl)}>Consume local verification link</button>}
+            {isReset && <div className="test-reset-row"><input aria-label="New synthetic reset password" type="password" minLength={12} placeholder="New synthetic password (12+ chars)" value={resetPassword} onChange={event => setResetPassword(event.target.value)} /><button className="test-button test-button-secondary" type="button" disabled={busy} onClick={() => void resetFromMessage(message.verificationUrl)}>Use local reset link</button></div>}
+          </div>
+        }) : <Notice>No synthetic messages yet. Register or request a reset to exercise the local outbox.</Notice>}
+      </div>
+    </details>
     <button className="test-text-button" type="button" onClick={() => navigate('/test')}>Return to synthetic browse</button>
   </section>
 }
 
 type BrandOwner = ApiBrand & { status: string; category: string }
-type LaunchOwner = { id: string; title: string; status: string; slug: string; category?: string; summary?: string; story?: string; moderationLocked?: boolean }
+type LaunchOwner = { id: string; title: string; status: string; slug: string; category?: string; summary?: string; story?: string; moderationLocked?: boolean; publishedAt?: string; createdAt?: string; updatedAt?: string }
+
+function initialWorkspaceBrandId(items: BrandOwner[]) {
+  return items.find(brand => brand.status === 'published')?.id || items[0]?.id || ''
+}
+
+function launchActivity(launch: LaunchOwner) {
+  const dates = [
+    { label: 'Updated', value: launch.updatedAt },
+    { label: 'Published', value: launch.publishedAt },
+    { label: 'Created', value: launch.createdAt }
+  ]
+  let latest: { label: string; value: string; timestamp: number } | undefined
+  for (const date of dates) {
+    const value = date.value
+    if (!value) continue
+    const timestamp = Date.parse(value)
+    if (Number.isFinite(timestamp) && (!latest || timestamp > latest.timestamp)) latest = { label: date.label, value, timestamp }
+  }
+  return latest
+}
+
+function formatWorkspaceDate(value: string) {
+  return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value))
+}
 
 function WorkspacePage() {
   const { user, loading } = useTestSession()
@@ -643,7 +686,7 @@ function WorkspacePage() {
       ])
       setProfile(profileResult.item)
       setBrands(brandResult.items)
-      const next = selectedBrand || brandResult.items[0]?.id || ''
+      const next = selectedBrand || initialWorkspaceBrandId(brandResult.items)
       setSelectedBrand(next)
     } catch (err) { setNotice(errorText(err)); setNoticeKind('error') }
   }, [selectedBrand])
@@ -651,6 +694,8 @@ function WorkspacePage() {
   const [productsForBrand, setProductsForBrand] = useState('')
   const visibleProducts = productsForBrand === selectedBrand ? products : []
   const launchesLoading = Boolean(selectedBrand && launchesLoadedForBrand !== selectedBrand)
+  const selectedBrandRecord = brands.find(brand => brand.id === selectedBrand)
+  const recentLaunches = [...launches].sort((first, second) => (launchActivity(second)?.timestamp ?? 0) - (launchActivity(first)?.timestamp ?? 0)).slice(0, 3)
   useEffect(() => {
     if (!userId) return
     let active = true
@@ -661,7 +706,7 @@ function WorkspacePage() {
       if (!active) return
       setProfile(profileResult.item)
       setBrands(brandResult.items)
-      setSelectedBrand(current => current && brandResult.items.some(item => item.id === current) ? current : brandResult.items[0]?.id || '')
+      setSelectedBrand(current => current && brandResult.items.some(item => item.id === current) ? current : initialWorkspaceBrandId(brandResult.items))
     }).catch(err => { if (active) { setNotice(errorText(err)); setNoticeKind('error') } })
     return () => { active = false }
   }, [userId])
@@ -790,11 +835,47 @@ function WorkspacePage() {
     await loadLaunches(); setEditingLaunchId(''); show(`Synthetic launch “${launch.title}” archived.`)
   })
   return <section className="test-content-width test-workspace-page">
-    <TestPageHeading eyebrow="PRIVATE TEST WORKSPACE" title="Founder workspace" description="Create a fictional profile, brand, image-backed launch draft, and publish it to the synthetic browse API." />
-    <div className="test-feature-shortcuts"><Link to="/test/dashboard">Founder home and analytics</Link><Link to="/test/business-profile">Update business contact / location</Link><Link to="/test/founder-profile">Update founder profile</Link><Link to="/test/notifications">Notification center</Link></div>
+    <section className="test-workspace-welcome" aria-labelledby="test-workspace-welcome-title">
+      <div className="test-workspace-welcome-main">
+        <span className="test-workspace-welcome-eyebrow">YOUR PRIVATE FOUNDER HOME</span>
+        <h1 id="test-workspace-welcome-title">Welcome back, {user.displayName}</h1>
+        <p>Your home base for shaping a good idea, building your business, and sharing what’s next.</p>
+        <div className="test-workspace-welcome-actions"><a className="test-button test-button-primary" href="#workspace-launches">Create a launch <ArrowUpRight size={15} aria-hidden="true" /></a><Link className="test-workspace-dashboard-link" to="/test/dashboard">View founder dashboard <ArrowUpRight size={14} aria-hidden="true" /></Link></div>
+        <span className="test-workspace-synthetic-note">Synthetic preview · Changes stay in this disposable session.</span>
+      </div>
+      <dl className="test-workspace-welcome-stats" aria-label="Workspace snapshot">
+        <div><dt>Your brands</dt><dd>{brands.length}</dd><small>{brands.filter(brand => brand.status === 'published').length} published</small></div>
+        <div><dt>Founder profile</dt><dd>{profile ? 'Ready' : 'Set up'}</dd><small>{profile ? 'Attached to new launches' : 'One quick step to get started'}</small></div>
+      </dl>
+    </section>
+    <div className="test-workspace-overview">
+      <section className="test-workspace-overview-panel test-workspace-shortcuts" aria-labelledby="test-workspace-shortcuts-title">
+        <div className="test-workspace-panel-heading"><span className="test-eyebrow">A GOOD PLACE TO START</span><h2 id="test-workspace-shortcuts-title">Your shortcuts</h2><p>Pick up where you left off or take the next step.</p></div>
+        <div className="test-workspace-shortcut-groups">
+          <div className="test-workspace-shortcut-group"><span>01 · CREATE</span><a href="#workspace-launches">Start a launch <ArrowUpRight size={14} aria-hidden="true" /></a><p>Draft and publish your next update.</p></div>
+          <div className="test-workspace-shortcut-group"><span>02 · BUILD</span><a href="#workspace-brands">Manage your brands <ArrowUpRight size={14} aria-hidden="true" /></a><p>Shape your business presence and catalog.</p></div>
+          <div className="test-workspace-shortcut-group"><span>03 · GROW</span><Link to="/test/founder-profile">Update founder profile <ArrowUpRight size={14} aria-hidden="true" /></Link><p>Help the community get to know you.</p></div>
+          <div className="test-workspace-shortcut-group"><span>04 · STAY IN THE LOOP</span><Link to="/test/notifications">Open notifications <ArrowUpRight size={14} aria-hidden="true" /></Link><p>See what’s happening around your launches.</p></div>
+        </div>
+        <div className="test-workspace-shortcut-footer"><Link to="/test/business-profile">Business contact & location</Link><Link to="/test/dashboard">Founder analytics</Link></div>
+      </section>
+      <section className="test-workspace-overview-panel test-workspace-recent" aria-labelledby="test-workspace-recent-title" data-testid="workspace-recent-launches">
+        <div className="test-workspace-panel-heading test-workspace-recent-heading"><div><span className="test-eyebrow">LATEST ACTIVITY</span><h2 id="test-workspace-recent-title">Recent launches</h2></div><span className="test-workspace-brand-label">{selectedBrandRecord?.name ?? 'Your workspace'}</span></div>
+        {launchesLoading ? <p className="test-workspace-recent-message" aria-live="polite">Loading recent activity…</p> : launchesError && launchesLoadedForBrand === selectedBrand ? <Notice kind="error">{launchesError}</Notice> : !selectedBrand ? <p className="test-workspace-recent-message">Create a brand first, then your launch activity will appear here. <a href="#workspace-brands">Create a brand</a></p> : recentLaunches.length ? <ul className="test-workspace-recent-list">{recentLaunches.map(launch => {
+          const activity = launchActivity(launch)
+          return <li key={launch.id} className="test-workspace-recent-item">
+            <div className="test-workspace-recent-meta"><span className={`test-workspace-launch-status is-${launch.status}`}>{launch.status}</span>{activity ? <time dateTime={activity.value}>{activity.label} {formatWorkspaceDate(activity.value)}</time> : <span>Recent activity</span>}</div>
+            {launch.status === 'published' ? <Link className="test-workspace-recent-title" to={`/test/launch/${launch.slug}`}>{launch.title}</Link> : <strong className="test-workspace-recent-title">{launch.title}</strong>}
+          </li>
+        })}</ul> : <p className="test-workspace-recent-message">No launches for this brand yet. Start with a draft when you’re ready.</p>}
+        <a className="test-workspace-see-all" href="#workspace-launches">See all launches <ArrowUpRight size={14} aria-hidden="true" /></a>
+      </section>
+    </div>
     {notice && <Notice kind={noticeKind}>{notice}</Notice>}
+    <div className="test-workspace-management">
+      <div className="test-workspace-management-heading"><span className="test-eyebrow">YOUR WORKSPACE</span><h2>Build and manage</h2><p>Keep your founder profile, business, launches, and products up to date.</p></div>
     {!profile ? <article className="test-workspace-card"><div className="test-section-heading"><h2>Founder profile</h2><span>Required before launch publishing</span></div><p>Create a fictional profile for {user.displayName}.</p><button className="test-button test-button-primary" disabled={busy} onClick={createProfile}>Create synthetic founder profile</button></article> : <article className="test-workspace-card"><div className="test-section-heading"><h2>Founder profile ready</h2><span>{profile.displayName}</span></div><p>This sample profile is attached to new launches you create.</p></article>}
-    <article className="test-workspace-card"><div className="test-section-heading"><h2>Brands</h2><span>{brands.length} synthetic records</span></div>
+    <article id="workspace-brands" className="test-workspace-card"><div className="test-section-heading"><h2>Brands</h2><span>{brands.length} synthetic records</span></div>
       <div className="test-owned-list">{brands.map(brand => <div className="test-owned-row" key={brand.id}><div><strong>{brand.name}</strong><span>{brand.status} · {brand.category}</span></div>{brand.status === 'draft' && <button className="test-button test-button-secondary" disabled={busy} onClick={() => void publishBrand(brand)}>Publish synthetic brand</button>}</div>)}</div>
       <div className="test-form-grid"><label className="test-field"><span>New fictional brand name</span><input value={brandName} maxLength={100} onChange={event => setBrandName(event.target.value)} /></label>
         <label className="test-field"><span>Category</span><select value={brandCategory} onChange={event => setBrandCategory(event.target.value)}>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
@@ -802,7 +883,7 @@ function WorkspacePage() {
       <div className="test-action-row"><button className="test-button test-button-secondary" disabled={busy} onClick={() => void run(async () => { const asset = await uploadFixture('brand-logo'); setLogoUrl(asset.url); show('Synthetic sample brand image uploaded to temporary storage.') })}>{logoUrl ? 'Replace sample logo' : 'Attach built-in synthetic logo'}</button><button className="test-button test-button-primary" disabled={busy || !brandName.trim()} onClick={() => void addBrand()}>Create draft brand</button></div>
       <p className="test-muted">Publishing uses the reserved <code>.invalid</code> destination, which is not linked or opened.</p>
     </article>
-    <article className="test-workspace-card"><div className="test-section-heading"><h2>Launches and drafts</h2><span>Edit drafts, publish, pause, resume, or archive your synthetic launches</span></div>
+    <article id="workspace-launches" className="test-workspace-card"><div className="test-section-heading"><h2>Launches and drafts</h2><span>Edit drafts, publish, pause, resume, or archive your synthetic launches</span></div>
       <label className="test-field"><span>Brand</span><select value={selectedBrand} onChange={event => setSelectedBrand(event.target.value)}><option value="">Choose a brand</option>{brands.map(brand => <option key={brand.id} value={brand.id}>{brand.name} · {brand.status}</option>)}</select></label>
       {brands.find(brand => brand.id === selectedBrand)?.status !== 'published' && selectedBrand && <Notice>Publish this brand before publishing a launch.</Notice>}
       <div className="test-form-grid"><label className="test-field"><span>Fictional launch title</span><input value={launchTitle} maxLength={120} onChange={event => setLaunchTitle(event.target.value)} /></label><label className="test-field"><span>Category</span><select value={launchCategory} onChange={event => setLaunchCategory(event.target.value)}>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label className="test-field"><span>Scheduled start (India time, optional)</span><input type="datetime-local" value={launchAtLocal} onChange={event => setLaunchAtLocal(event.target.value)} /></label><label className="test-field"><span>Launch ending (India time, optional)</span><input type="datetime-local" value={endsAtLocal} onChange={event => setEndsAtLocal(event.target.value)} /></label></div><p className="test-muted">Scheduled launches use Asia/Kolkata; optional end time triggers an in-app reminder within 48 hours.</p>
@@ -854,6 +935,7 @@ function WorkspacePage() {
       </form>
       <p className="test-muted">Product cards link directly to the business’s HTTPS destination. There is no cart, checkout, order processing, or payment handling. This synthetic preview resets its in-memory database and temporary uploads when stopped.</p>
     </article>
+    </div>
   </section>
 }
 
@@ -867,6 +949,7 @@ function TestRouter() {
   if (pathname === '/test/nearby') return <BusinessDiscoveryPage user={user} />
   if (pathname === '/test/saved-businesses') return <SavedBusinessesPage user={user} />
   if (pathname === '/test/following') return <FollowingPage user={user} />
+  if (pathname === '/test/for-you') return <ForYouPage />
   if (pathname === '/test/collections') return <CollectionsPage user={user} />
   if (pathname === '/test/upcoming') return <UpcomingPage />
   if (pathname === '/test/trending') return <TrendingPage />

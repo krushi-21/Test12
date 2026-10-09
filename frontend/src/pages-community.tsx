@@ -206,7 +206,7 @@ function ModeratorQueuePanel({ user }: { user?: CommunityUser | null }) {
     finally { setBusyActionId('') }
   }
 
-  return <details className="community-sidebar-card community-moderation-card">
+  return <details className="community-sidebar-card community-moderation-card" data-testid="community-moderation-panel">
     <summary><ShieldCheck size={16} aria-hidden="true" /><span>Moderator queue</span><ChevronDown size={14} aria-hidden="true" /></summary>
     <p className="community-moderation-intro">Queue access and every action are checked by the server; this page does not infer a moderator role.</p>
     {!user ? <p className="community-moderation-state">Sign in before checking moderator access. <Link to="/test/account">Open account sign-in</Link></p> : <>
@@ -304,6 +304,7 @@ function CommunityHubPreview({ user }: { user?: CommunityUser | null }) {
       <aside className="community-hub-sidebar" aria-label="Community conversations and prompts">
         {featuredLaunch && <section className="community-hub-side-card community-hub-conversation"><span className="community-eyebrow">THIS WEEK'S CONVERSATION</span><img src={featuredLaunch.images[0]?.url} alt="" loading="lazy" /><h2>{featuredLaunch.title}</h2><p>{featuredLaunch.summary}</p><span className="community-hub-event-meta"><MapPin size={14} aria-hidden="true" />Fictional maker story · local sample</span><Link to={`/launch/${featuredLaunch.slug}`}>Explore the story <ArrowRight size={14} aria-hidden="true" /></Link></section>}
         <section className="community-hub-side-card community-hub-prompt"><span className="community-eyebrow">COMMUNITY PROMPT</span><h2>Share what you’re learning.</h2><p>Share your process, tools or a lesson learned with the community.</p>{user ? <span className="community-hub-prompt-note">Signed in as {user.emailVerified ? 'a verified member' : 'a synthetic member'} · preview only</span> : <Link to="/test/account">Sign in to join the conversation <ArrowRight size={14} aria-hidden="true" /></Link>}</section>
+        <ModeratorQueuePanel user={user} />
         <section className="community-hub-side-card community-hub-activity"><div className="community-hub-section-heading"><div><span className="community-eyebrow">COMMUNITY FEED</span><h2>Recent stories</h2></div></div>{DEMO_LAUNCHES.slice(3, 5).map(launch => <Link key={launch.id} to={`/launch/${launch.slug}`} className="community-hub-activity-row"><span className="community-mini-avatar">{launch.founders[0]?.displayName.slice(0, 1)}</span><span><strong>{launch.brand.name}</strong><small>{launch.title}</small></span><ArrowRight size={14} aria-hidden="true" /></Link>)}</section>
       </aside>
     </div>

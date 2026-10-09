@@ -432,7 +432,19 @@
 .home-monthly-list { display: grid; gap: 7px; }
 
 /* Founder profile page — kept local to the homepage/founder component module. */
-.home-founder-page { padding-bottom: 30px; }
+.home-founder-page {
+  --aarambh-ink: #1b2642;
+  --aarambh-text: #272a38;
+  --aarambh-saffron: #d6a438;
+  --aarambh-coral: #d87360;
+  --aarambh-sage: #748879;
+  --aarambh-border: #e7e4dc;
+  --aarambh-soft: #f7f5ef;
+  --aarambh-surface: #fff;
+  --home-serif: Georgia, 'Times New Roman', serif;
+  padding-bottom: 30px;
+  color: var(--aarambh-text);
+}
 .home-founder-page .test-back-link { margin-bottom: 7px; color: #777783; font-size: 11px; }
 .home-founder-hero {
   padding: clamp(20px, 3.2vw, 38px);
@@ -446,6 +458,7 @@
 }
 .home-founder-identity { min-width: 0; grid-column: 1 / -1; display: grid; grid-template-columns: 94px minmax(0, 1fr); gap: 22px; align-items: center; }
 .home-founder-page .home-founder-avatar-large { width: 94px; height: 94px; flex-basis: 94px; border: 1px solid #e6e0d4; color: var(--aarambh-ink); background: #f2eee3; font-family: var(--home-serif); font-size: 37px; }
+.home-founder-page .home-founder-avatar-large img { object-position: 37% 28%; }
 .home-founder-page .home-founder-intro { min-width: 0; }
 .home-founder-intro .test-eyebrow { margin-bottom: 7px; color: var(--aarambh-coral); }
 .home-founder-intro h1 { margin: 0; color: var(--aarambh-ink); font-family: var(--home-serif); font-size: clamp(31px, 4vw, 45px); line-height: 1.05; letter-spacing: -.035em; }
@@ -512,6 +525,9 @@
   .home-founder-actions { justify-content: flex-start; }
   .home-founder-guest-follow { justify-items: start; }
   .home-founder-signin { text-align: left; }
+  .home-founder-page .home-founder-section-grid { margin-top: 0; }
+  .home-founder-page .home-founder-section-heading { min-height: 33px; margin-bottom: 4px; }
+  .home-founder-page .home-founder-launch-copy { padding-top: 4px; padding-bottom: 4px; }
   .home-founder-section-heading h2 { font-size: 20px; }
   .home-founder-launch-grid { gap: 7px; }
   .home-founder-launch-copy { padding: 7px 7px 9px; }

@@ -155,10 +155,11 @@ try {
   assert.equal(await evaluate('document.querySelector(".home-filter-control select")?.getAttribute("aria-label")'), 'Filter by category', 'the homepage should expose a category filter')
   const mobileShell = await evaluate(`(() => {
     const menu = document.querySelector('.test-sidebar-menu')
+    const menuSummary = menu?.querySelector('summary')
     const rect = selector => document.querySelector(selector)?.getBoundingClientRect()
     return {
       menuClosed: !menu?.open,
-      menuControlVisible: getComputedStyle(menu?.querySelector('summary')).display !== 'none',
+      menuControlVisible: Boolean(menuSummary && getComputedStyle(menuSummary).display !== 'none'),
       savedHref: document.querySelector('[data-testid="saved-businesses-nav"]')?.getAttribute('href'),
       routeTargets: [...document.querySelectorAll('.test-sidebar-nav a[href]')].map(link => link.getAttribute('href')),
       staticPreviewHref: document.querySelector('.test-sidebar-footer .test-static-link')?.getAttribute('href'),
@@ -176,7 +177,7 @@ try {
   assert.ok(formerShellRoutes.every(route => mobileShell.routeTargets.includes(route)), 'all prior shared-shell route destinations must remain in the sidebar')
   assert.equal(mobileShell.staticPreviewHref, '/', 'the static preview destination must remain available')
   assert.ok(mobileShell.searchWidth > 0 && mobileShell.cityWidth > 0, 'homepage search and city controls should both remain visible on mobile')
-  assert.match(mobileShell.heroHeading, /Discover India/u, 'the original homepage hero remains present on mobile')
+  assert.ok(mobileShell.heroHeading.includes('Rooted in craft.') && mobileShell.heroHeading.includes('Made by India.'), 'the reference homepage hero remains present on mobile')
   assert.ok(mobileShell.heroHeadingTop >= 0 && mobileShell.heroHeadingTop < 844, 'the first homepage hero heading should remain in the mobile first viewport')
   assert.equal(mobileShell.duplicateTabs, 'none', 'shared mobile navigation should replace the homepage-only bottom tabs')
   await click('.test-sidebar-menu > summary')
@@ -205,7 +206,7 @@ try {
   assert.equal(desktopHome.menuOpen, true, 'desktop sidebar details should stay open')
   assert.equal(desktopHome.navVisible, true, 'desktop route links should be visible without opening a menu')
   assert.ok(desktopHome.searchWidth > 0 && desktopHome.cityWidth > 0, 'homepage search and city controls should remain visible on desktop')
-  assert.match(desktopHome.heroHeading, /Discover India/u, 'the existing homepage hero should remain intact')
+  assert.ok(desktopHome.heroHeading.includes('Rooted in craft.') && desktopHome.heroHeading.includes('Made by India.'), 'the reference homepage hero should remain intact')
   assert.equal(desktopHome.horizontalOverflow, false, 'the desktop homepage should not overflow horizontally')
   await client.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
   await waitFor(evaluate, 'innerWidth === 390', 'return to mobile viewport')
@@ -268,7 +269,7 @@ try {
   await click('.test-form-card button[type="submit"]')
   await waitFor(evaluate, 'document.querySelector(".test-sidebar-account")?.textContent.includes("Rhea Sample")', 'founder account session')
   await click('a[href="/test/workspace"]')
-  await waitFor(evaluate, 'document.body.innerText.includes("Founder workspace") && document.body.innerText.includes("Sample Orbit Labs")', 'founder workspace')
+  await waitFor(evaluate, 'document.querySelector("#test-workspace-welcome-title")?.textContent.trim() === "Welcome back, Rhea Sample" && document.body.innerText.includes("Sample Orbit Labs")', 'founder workspace welcome dashboard')
   const stamp = Date.now()
   const brandName = `Browser Synthetic Brand ${stamp}`
   await fill('.test-workspace-page input', brandName)
@@ -360,7 +361,11 @@ try {
   await waitFor(evaluate, `document.querySelectorAll(".test-business-card").length === 1 && document.querySelector(".test-business-card h2")?.innerText.includes(${JSON.stringify(searchedBusiness)})`, 'nearby business search filter')
   await fill('.test-discovery-filters input[placeholder^="Cafe, studio"]', '')
   await fill('.test-discovery-filters input[placeholder="e.g. Navrangpura"]', 'Navrangpura')
-  await waitFor(evaluate, 'document.querySelectorAll(".test-business-card").length === 1 && document.querySelector(".test-business-card h2")?.innerText.includes("Sample Riverstone Cafe")', 'area filter')
+  await waitFor(evaluate, '(() => { const names = [...document.querySelectorAll(".test-business-card h2")].map(item => item.innerText.trim()); return names.length >= 2 && names.includes("Sample Riverstone Cafe") && names.includes("Miti Studio") })()', 'Navrangpura filter returns both known seeded businesses')
+  const navrangpuraMatches = await evaluate('[...document.querySelectorAll(".test-business-card h2")].map(item => item.innerText.trim())')
+  assert.ok(navrangpuraMatches.length >= 2, 'the area filter should retain all valid matches')
+  assert.ok(navrangpuraMatches.includes('Sample Riverstone Cafe'), 'Sample Riverstone Cafe should match Navrangpura')
+  assert.ok(navrangpuraMatches.includes('Miti Studio'), 'Miti Studio should match Navrangpura')
   await waitForApiRequest('/api/discover/businesses', { city: 'Ahmedabad', area: 'Navrangpura' }, 'city and area filters')
   await click('.test-filter-toggles input[aria-label="Open now"]')
   await waitForApiRequest('/api/discover/businesses', { openNow: 'true' }, 'open-now filter parameter')

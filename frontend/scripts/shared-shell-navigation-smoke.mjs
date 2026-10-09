@@ -109,6 +109,7 @@ try {
       const footer = document.querySelector('.test-footer')
       const notifications = document.querySelector('.test-mobile-notifications')
       const localTabs = document.querySelector('.home-mobile-tabs')
+      const shellContent = document.querySelector('.test-shell-content')
       const navRect = bottomNav?.getBoundingClientRect()
       const footerRect = footer?.getBoundingClientRect()
       const sidebar = document.querySelector('.test-sidebar')
@@ -125,12 +126,14 @@ try {
         notificationsDisplay: notifications ? getComputedStyle(notifications).display : 'missing',
         notificationsCurrent: notifications?.getAttribute('aria-current') ?? null,
         localTabsDisplay: localTabs ? getComputedStyle(localTabs).display : 'not-on-this-route',
-        contentBottomPadding: parseFloat(getComputedStyle(document.querySelector('.test-shell-content')).paddingBottom),
+        shellContentPresent: Boolean(shellContent),
+        contentBottomPadding: shellContent ? parseFloat(getComputedStyle(shellContent).paddingBottom) : null,
         footerBottom: footerRect ? Math.round(footerRect.bottom) : null,
         scrollY: Math.round(window.scrollY),
         maximumScroll: Math.max(0, document.documentElement.scrollHeight - innerHeight),
         noHorizontalOverflow: document.documentElement.scrollWidth <= innerWidth,
-        sidebarWidth: Math.round(sidebar.getBoundingClientRect().width),
+        sidebarPresent: Boolean(sidebar),
+        sidebarWidth: sidebar ? Math.round(sidebar.getBoundingClientRect().width) : null,
         sidebarMenuOpen: document.querySelector('.test-sidebar-menu')?.open,
         sidebarNavVisible: Boolean(sidebarNav?.getClientRects().length),
       }
@@ -151,6 +154,7 @@ try {
     { path: '/test/founder-profile', tab: 'Profile', sidebar: ['My profile'] },
     { path: '/test/launch/sample-release-notes', tab: 'Explore', sidebar: ['Launch detail'] },
     { path: '/test/following', tab: 'Explore', sidebar: ['Following'] },
+    { path: '/test/for-you', tab: 'Explore', sidebar: [] },
     { path: '/test/upcoming', tab: 'Explore', sidebar: ['Upcoming'] },
     { path: '/test/trending', tab: 'Explore', sidebar: ['Trending'] },
     { path: '/test/leaderboard', tab: 'Explore', sidebar: ['Leaderboard'] },
@@ -166,6 +170,8 @@ try {
     assert.deepEqual(state.activeSidebar, testCase.sidebar, `${testCase.path}: exactly the target-aware sidebar link(s) should be current`)
     assert.notEqual(state.notificationsDisplay, 'none', `${testCase.path}: mobile notifications action should be visible`)
     assert.equal(state.notificationsCurrent, testCase.notificationsCurrent ? 'page' : null, `${testCase.path}: notifications action should accurately identify its page`)
+    assert.equal(state.shellContentPresent, true, `${testCase.path}: shared shell content should be present`)
+    assert.equal(state.sidebarPresent, true, `${testCase.path}: shared desktop/mobile sidebar shell should be present`)
     assert.equal(state.contentBottomPadding >= 62, true, `${testCase.path}: content should reserve mobile-bar clearance`)
     assert.equal(state.noHorizontalOverflow, true, `${testCase.path}: 390px layout should not overflow horizontally`)
     assert.equal(state.bottomNavTop >= 0 && state.bottomNavTop < 844, true, `${testCase.path}: fixed mobile bar should remain in the viewport`)

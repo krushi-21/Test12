@@ -156,6 +156,8 @@ try {
       menuOpen: menu?.open,
       navVisible: Boolean(nav?.getClientRects().length),
       sidebarWidth: Math.round(sidebar.getBoundingClientRect().width),
+      mapVisible: Boolean(document.querySelector('.test-map-panel')),
+      defaultMarkerCount: document.querySelectorAll('.test-map-marker').length,
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth
     }
   })()`)
@@ -170,9 +172,13 @@ try {
   assert.equal(desktop.menuOpen, true, 'the persistent desktop sidebar should be open')
   assert.equal(desktop.navVisible, true, 'desktop route links should be visible without a menu toggle')
   assert.equal(desktop.sidebarWidth, 248, 'desktop routes should use the fixed-width shared sidebar')
+  assert.equal(desktop.mapVisible, true, 'desktop discovery should open in split map/list mode by default')
+  assert.equal(desktop.defaultMarkerCount, 2, 'the default desktop map should show only valid founder-coordinate pins')
   assert.equal(desktop.horizontalOverflow, false)
   if (screenshotDir) await saveScreenshot('discovery-first-viewport-desktop.png')
 
+  await evaluate(` [...document.querySelectorAll('.test-action-row button')].find(button => button.textContent.trim() === 'List view')?.click()`)
+  await waitFor(() => evaluate('!document.querySelector(".test-map-panel")'), 'switch to list-only view')
   const clickedMap = await evaluate(`(() => {
     const button = [...document.querySelectorAll('.test-action-row button')].find(item => item.textContent.trim() === 'Map view')
     if (!button) return false
@@ -245,22 +251,45 @@ try {
 
   await client.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
   await waitFor(() => evaluate('innerWidth === 390'), 'mobile viewport')
+  await client.send('Page.navigate', { url: parsed.href })
+  await waitFor(() => evaluate('Boolean(document.querySelector(".test-discovery-filters") && document.querySelectorAll(".test-business-card").length === 3)'), 'mobile discovery reload')
   await evaluate('window.scrollTo({ top: 0, behavior: "instant" })')
+  await waitFor(() => evaluate('document.querySelector(".test-discovery-filter-toggle")?.getAttribute("aria-expanded") === "false"'), 'mobile filters to start collapsed')
   const mobile = await evaluate(`(() => {
-    const section = document.querySelector('.test-feature-page:has(> .test-map-panel)')
-    const columns = getComputedStyle(section).gridTemplateColumns.trim().split(/\\s+/u).length
-    const filterColumns = getComputedStyle(document.querySelector('.test-discovery-filters')).gridTemplateColumns.trim().split(/\\s+/u).length
-    return { columns, filterColumns, horizontalOverflow: document.documentElement.scrollWidth > innerWidth, markers: document.querySelectorAll('.test-map-marker').length, mapWidth: document.querySelector('.test-map-canvas')?.getBoundingClientRect().width, thumbnailWidths: [...document.querySelectorAll('.test-business-card-thumb')].map(photo => photo.getBoundingClientRect().width), menuClosed: !document.querySelector('.test-sidebar-menu')?.open, menuButtonVisible: getComputedStyle(document.querySelector('.test-sidebar-menu > summary')).display !== 'none' }
+    const section = document.querySelector('.test-feature-page:has(> .test-discovery-filters)')
+    const toggle = document.querySelector('.test-discovery-filter-toggle')
+    const filterGrid = document.querySelector('.test-discovery-filters')
+    const searchButton = [...document.querySelectorAll('.test-action-row button')].find(button => button.textContent.trim() === 'Search nearby')
+    const mapButton = [...document.querySelectorAll('.test-action-row button')].find(button => button.textContent.trim() === 'Map view')
+    return { horizontalOverflow: document.documentElement.scrollWidth > innerWidth, mapVisible: Boolean(document.querySelector('.test-map-panel')), filterToggleVisible: getComputedStyle(toggle).display !== 'none', filtersCollapsed: toggle.getAttribute('aria-expanded') === 'false' && getComputedStyle(filterGrid).display === 'none', citySummary: toggle.querySelector('.test-discovery-filter-summary')?.textContent.trim(), actionBottom: Math.max(searchButton.getBoundingClientRect().bottom, mapButton.getBoundingClientRect().bottom), sectionWidth: section.getBoundingClientRect().width, menuClosed: !document.querySelector('.test-sidebar-menu')?.open, menuButtonVisible: getComputedStyle(document.querySelector('.test-sidebar-menu > summary')).display !== 'none' }
   })()`)
-  assert.equal(mobile.columns, 1, 'mobile map/results should stack in one column')
-  assert.equal(mobile.filterColumns, 2, 'the 390px filter panel should use a compact two-column grid')
   assert.equal(mobile.horizontalOverflow, false, 'discovery should fit a 390px viewport')
-  assert.equal(mobile.markers, 2, 'both founder-coordinate pins should remain usable on mobile')
-  assert.ok(mobile.mapWidth > 0 && mobile.mapWidth <= 390, 'the interactive plot should fit the mobile viewport')
-  assert.ok(mobile.thumbnailWidths.length === 3 && mobile.thumbnailWidths.every(width => width > 0 && width <= 64), '390px business thumbnails should remain compact and visible')
+  assert.equal(mobile.mapVisible, false, 'mobile discovery should start in the compact list view')
+  assert.equal(mobile.filterToggleVisible, true, 'mobile should expose a visible Filters disclosure control')
+  assert.equal(mobile.filtersCollapsed, true, 'mobile filters should start collapsed to keep results and map controls accessible')
+  assert.equal(mobile.citySummary, 'Ahmedabad · 25 km radius', 'collapsed filter summary should preserve the current city and distance')
+  assert.ok(mobile.actionBottom <= 844, 'mobile search and map controls should remain above the fold when filters are collapsed')
+  assert.ok(mobile.sectionWidth <= 390, 'mobile results should fit within the viewport')
   assert.equal(mobile.menuClosed, true, 'mobile sidebar menu should start compact')
   assert.equal(mobile.menuButtonVisible, true, 'mobile sidebar should expose its compact menu control')
   if (screenshotDir) await saveScreenshot('discovery-first-viewport-mobile.png')
+  await evaluate(`document.querySelector('.test-discovery-filter-toggle')?.click()`)
+  await waitFor(() => evaluate('document.querySelector(".test-discovery-filter-toggle")?.getAttribute("aria-expanded") === "true"'), 'expand mobile filters')
+  const expandedFilters = await evaluate(`(() => ({ columnCount: getComputedStyle(document.querySelector('.test-discovery-filters')).gridTemplateColumns.trim().split(/\\s+/u).length, radius: document.querySelector('[aria-label="Search radius in kilometres"]').value, city: document.querySelector('[aria-label="Filter by city"]').value, togglesVisible: getComputedStyle(document.querySelector('.test-filter-toggles')).display !== 'none' }))()`)
+  assert.equal(expandedFilters.columnCount, 2, 'expanded filters should use two columns at 390px')
+  assert.equal(expandedFilters.radius, '25')
+  assert.equal(expandedFilters.city, 'Ahmedabad')
+  assert.equal(expandedFilters.togglesVisible, true, 'expanded filters should expose the existing advanced toggles')
+  await evaluate(`document.querySelector('.test-discovery-filter-toggle')?.click()`)
+  await waitFor(() => evaluate('document.querySelector(".test-discovery-filter-toggle")?.getAttribute("aria-expanded") === "false"'), 'collapse mobile filters')
+  await evaluate(` [...document.querySelectorAll('.test-action-row button')].find(button => button.textContent.trim() === 'Map view')?.click()`)
+  await waitFor(() => evaluate('Boolean(document.querySelector(".test-map-panel"))'), 'open the mobile map view')
+  const mobileMap = await evaluate(`(() => ({ columns: getComputedStyle(document.querySelector('.test-feature-page:has(> .test-map-panel)')).gridTemplateColumns.trim().split(/\\s+/u).length, markers: document.querySelectorAll('.test-map-marker').length, mapWidth: document.querySelector('.test-map-canvas')?.getBoundingClientRect().width, thumbnailWidths: [...document.querySelectorAll('.test-business-card-thumb')].map(photo => photo.getBoundingClientRect().width), overflow: document.documentElement.scrollWidth > innerWidth }))()`)
+  assert.equal(mobileMap.columns, 1, 'mobile map and results should stack in one column')
+  assert.equal(mobileMap.markers, 2, 'both founder-coordinate pins should remain usable on mobile')
+  assert.ok(mobileMap.mapWidth > 0 && mobileMap.mapWidth <= 390, 'the mobile coordinate map should fit the viewport')
+  assert.ok(mobileMap.thumbnailWidths.length === 3 && mobileMap.thumbnailWidths.every(width => width > 0 && width <= 64), '390px business thumbnails should remain compact and visible')
+  assert.equal(mobileMap.overflow, false, 'the mobile map view should not cause horizontal overflow')
   await evaluate(`document.querySelector('.test-sidebar-menu > summary')?.click()`)
   assert.equal(await evaluate('document.querySelector(".test-sidebar-menu")?.open'), true, 'the compact mobile menu should reveal the route list')
   await evaluate(`document.querySelector('.test-sidebar-menu > summary')?.click()`)
@@ -271,8 +300,17 @@ try {
   }
   await client.send('Emulation.setDeviceMetricsOverride', { width: 320, height: 740, deviceScaleFactor: 1, mobile: true })
   await waitFor(() => evaluate('innerWidth === 320'), 'narrow mobile viewport')
-  const narrowMobile = await evaluate(`(() => ({ filterColumns: getComputedStyle(document.querySelector('.test-discovery-filters')).gridTemplateColumns.trim().split(/\\s+/u).length, horizontalOverflow: document.documentElement.scrollWidth > innerWidth, mapWidth: document.querySelector('.test-map-canvas')?.getBoundingClientRect().width, thumbnailWidths: [...document.querySelectorAll('.test-business-card-thumb')].map(photo => photo.getBoundingClientRect().width) }))()`)
-  assert.equal(narrowMobile.filterColumns, 1, 'the 320px filter panel should fall back to one column')
+  await evaluate(`document.querySelector('.test-discovery-filter-toggle')?.click()`)
+  await waitFor(() => evaluate('document.querySelector(".test-discovery-filter-toggle")?.getAttribute("aria-expanded") === "true"'), 'expand narrow mobile filters')
+  const narrowExpandedFilters = await evaluate(`(() => ({ columns: getComputedStyle(document.querySelector('.test-discovery-filters')).gridTemplateColumns.trim().split(/\\s+/u).length, city: document.querySelector('[aria-label="Filter by city"]').value, radius: document.querySelector('[aria-label="Search radius in kilometres"]').value }))()`)
+  assert.equal(narrowExpandedFilters.columns, 1, 'expanded filters should use a single column at 320px')
+  assert.equal(narrowExpandedFilters.city, 'Ahmedabad')
+  assert.equal(narrowExpandedFilters.radius, '25')
+  await evaluate(`document.querySelector('.test-discovery-filter-toggle')?.click()`)
+  await waitFor(() => evaluate('document.querySelector(".test-discovery-filter-toggle")?.getAttribute("aria-expanded") === "false"'), 'collapse narrow mobile filters')
+  const narrowMobile = await evaluate(`(() => ({ filterToggleVisible: getComputedStyle(document.querySelector('.test-discovery-filter-toggle')).display !== 'none', filtersCollapsed: document.querySelector('.test-discovery-filter-toggle').getAttribute('aria-expanded') === 'false', horizontalOverflow: document.documentElement.scrollWidth > innerWidth, mapWidth: document.querySelector('.test-map-canvas')?.getBoundingClientRect().width, thumbnailWidths: [...document.querySelectorAll('.test-business-card-thumb')].map(photo => photo.getBoundingClientRect().width) }))()`)
+  assert.equal(narrowMobile.filterToggleVisible, true, 'a 320px viewport should retain its compact filter disclosure')
+  assert.equal(narrowMobile.filtersCollapsed, true, 'filters should remain collapsed after switching to 320px')
   assert.equal(narrowMobile.horizontalOverflow, false, 'discovery should fit a 320px viewport')
   assert.ok(narrowMobile.mapWidth > 0 && narrowMobile.mapWidth <= 320, 'the coordinate plot should fit a 320px viewport')
   assert.ok(narrowMobile.thumbnailWidths.length === 3 && narrowMobile.thumbnailWidths.every(width => width > 0 && width <= 64), '320px business thumbnails should remain compact and visible')

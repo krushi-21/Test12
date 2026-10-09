@@ -74,6 +74,10 @@ async function clickButton(text, selector = 'body') {
   const result = await evaluate(`(() => { const root = document.querySelector(${JSON.stringify(selector)}); const button = [...(root?.querySelectorAll('button') ?? [])].find(item => item.textContent.trim() === ${JSON.stringify(text)}); if (!button) return false; button.click(); return true })()`)
   assert.equal(result, true, `Expected button “${text}” in ${selector}`)
 }
+async function clickLink(text, selector = 'body') {
+  const result = await evaluate(`(() => { const root = document.querySelector(${JSON.stringify(selector)}); const link = [...(root?.querySelectorAll('a') ?? [])].find(item => item.textContent.trim() === ${JSON.stringify(text)}); if (!link) return false; link.click(); return true })()`)
+  assert.equal(result, true, `Expected link “${text}” in ${selector}`)
+}
 async function setValue(selector, value) {
   const result = await evaluate(`(() => { const element = document.querySelector(${JSON.stringify(selector)}); if (!element) return false; const prototype = element instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : element instanceof HTMLSelectElement ? HTMLSelectElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(prototype, 'value').set.call(element, ${JSON.stringify(value)}); element.dispatchEvent(new Event('input', { bubbles: true })); element.dispatchEvent(new Event('change', { bubbles: true })); return true })()`)
   assert.equal(result, true, `Expected form control ${selector}`)
@@ -284,6 +288,25 @@ try {
   assert.equal(await requested('/api/me/following', 'GET'), true, 'Following should retain its original endpoint')
   assert.equal(await evaluate('window.__communityQaRequests.some(item => item.path.startsWith("/api/for-you"))'), false, 'the Following route must remain separate from For You')
 
+  await openPreviewCase(origin, 'feed-switch-for-you', '[data-testid="feed-mode-switch"]')
+  assert.equal(await evaluate('document.querySelector("[data-testid=feed-mode-for-you]")?.getAttribute("aria-current")'), 'page', 'For You should mark its selected feed mode')
+  assert.equal(await evaluate('document.querySelector("[data-testid=feed-mode-following]")?.getAttribute("href")'), '/test/following', 'For You should link directly to Following')
+  await clickLink('Following', '[data-testid="feed-mode-switch"]')
+  await waitFor(() => evaluate('document.querySelector(".test-page-heading h1")?.textContent === "Following"'), 'switch from For You to Following')
+  assert.equal(await evaluate('document.querySelector("[data-testid=feed-mode-following]")?.getAttribute("aria-current")'), 'page', 'Following should mark its selected feed mode')
+  assert.equal(await requested('/api/me/following', 'GET'), true, 'switching to Following should use its original endpoint')
+  const forYouRequestCount = await evaluate('window.__communityQaRequests.filter(item => item.path.startsWith("/api/for-you?")).length')
+  await clickLink('For You', '[data-testid="feed-mode-switch"]')
+  await waitFor(() => evaluate('Boolean(document.querySelector("[data-testid=for-you-page]") && document.querySelector("[data-testid=feed-mode-for-you]")?.getAttribute("aria-current") === "page")'), 'switch from Following to For You')
+  await waitFor(() => evaluate(`window.__communityQaRequests.filter(item => item.path.startsWith("/api/for-you?")).length > ${forYouRequestCount}`), 'For You refresh after returning from Following')
+  assert.equal(await evaluate('window.__communityQaRequests.some(item => item.path.startsWith("/api/me/following"))'), true, 'switch navigation should leave Following API-backed')
+
+  await openPreviewCase(origin, 'feed-switch-following', '[data-testid="feed-mode-switch"]')
+  assert.equal(await evaluate('document.querySelector("[data-testid=feed-mode-following]")?.getAttribute("aria-current")'), 'page', 'direct Following entry should mark its selected feed mode')
+  await clickLink('For You', '[data-testid="feed-mode-switch"]')
+  await waitFor(() => evaluate('Boolean(document.querySelector("[data-testid=for-you-page]") && document.querySelector("[data-testid=feed-mode-for-you]")?.getAttribute("aria-current") === "page")'), 'direct Following to For You switch')
+  assert.equal(await requested('/api/for-you?limit=20', 'GET'), true, 'switching from Following should load the distinct For You endpoint')
+
   await openPreviewCase(origin, 'collection-share', '.test-collection-share-hero')
   await waitFor(() => evaluate('Boolean(document.querySelector(".test-collection-share-hero h1")?.innerText === "Public synthetic collection" && document.querySelectorAll(".test-feature-launch-card").length === 1)'), 'p13 public share hero and launch card')
   assert.equal(await evaluate('document.querySelector(".test-collection-share-hero .test-collection-share-meta")?.innerText.includes("1 launch")'), true, 'the public share hero should show its launch count')
@@ -293,6 +316,17 @@ try {
   await waitFor(() => evaluate('document.querySelectorAll(".community-hub-person").length === 4 && document.querySelectorAll(".community-hub-story").length === 3'), 'p2 community hub sections')
   assert.equal(await evaluate('document.querySelector(".community-hub-heading h1")?.innerText'), 'Community', 'the community sample route should render its map-matched public hub title')
   assert.equal(await evaluate('Boolean(document.querySelector(".community-hub-conversation") && document.querySelector(".community-hub-prompt") && !document.querySelector(".community-profile-hero"))'), true, 'the public community route should show conversations and prompts instead of a founder profile')
+  assert.equal(await evaluate('Boolean(document.querySelector("[data-testid=community-moderation-panel]"))'), true, 'the public Community hub should expose the moderator queue panel')
+  await evaluate('document.querySelector("[data-testid=community-moderation-panel]").open = true')
+  await waitFor(() => evaluate('Boolean(document.querySelector("[data-testid=community-moderation-panel] button"))'), 'moderator queue controls on Community hub')
+  await clickButton('Load queues', '[data-testid="community-moderation-panel"]')
+  await waitFor(() => requested('/api/admin/reports?status=open', 'GET') && requested('/api/admin/reviews/reports', 'GET'), 'both protected moderator queues from Community hub')
+  assert.equal(await evaluate('document.querySelector("[data-testid=community-moderation-panel]")?.innerText.includes("Synthetic Launch Report")'), true, 'Community hub should render the loaded content queue item')
+  await setValue('#community-reason-synthetic-content-report', 'Synthetic moderator test reason on Community hub.')
+  await clickButton('Apply action', '[data-testid="community-moderation-panel"]')
+  await waitFor(() => requested('/api/admin/reports/synthetic-content-report/actions', 'POST'), 'Community hub moderation action')
+  await clickButton('Hide review', '[data-testid="community-moderation-panel"]')
+  await waitFor(() => requested('/api/admin/reviews/review-flagged/actions', 'POST'), 'Community hub review moderation action')
 
   console.log('Community and business-save UI tests passed: p2 community hub, p12 public collection links, p13 share hero, permissions, For You loading/ranking/reasons/filters/paging/empty/error/retry/signed-out, plus the Following endpoint and cards.')
 } finally {
