@@ -1,0 +1,13 @@
+Hello {{display_name}},
+
+The launch you asked us to remind you about has started.
+
+{{launch_title}}
+{{business_name}}
+
+See the launch:
+{{launch_url}}
+
+Aarambh
+Discover local businesses and the people behind them.
+{{app_url}}

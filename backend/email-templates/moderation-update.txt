@@ -1,0 +1,16 @@
+Hello {{display_name}},
+
+Aarambh's moderation team has reviewed a report concerning your {{content_type}}: {{content_name}}.
+
+{{decision_summary}}
+
+Moderator's reason:
+{{reason}}
+
+Review the update and available next steps in Aarambh:
+{{moderation_url}}
+
+If this action paused or removed your content, the review page explains how to submit an appeal.
+
+Aarambh
+{{app_url}}

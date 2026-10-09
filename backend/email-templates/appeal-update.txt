@@ -1,0 +1,15 @@
+Hello {{display_name}},
+
+There is an update about your Aarambh moderation appeal for {{content_type}}: {{content_name}}.
+
+{{appeal_status}}
+
+Reason:
+{{reason}}
+
+Review the update in Aarambh:
+{{moderation_url}}
+
+Aarambh
+Discover local businesses and the people behind them.
+{{app_url}}

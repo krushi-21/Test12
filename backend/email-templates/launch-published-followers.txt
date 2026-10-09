@@ -1,0 +1,13 @@
+Hello {{display_name}},
+
+A founder or business you follow has shared something new on Aarambh.
+
+{{launch_title}}
+{{business_name}}
+
+Explore this launch:
+{{launch_url}}
+
+Keep discovering local businesses and the people behind them on Aarambh.
+
+{{app_url}}

@@ -1,0 +1,17 @@
+Hello {{display_name}},
+
+A moderator has updated the leaderboard review for your launch:
+
+{{launch_title}}
+{{business_name}}
+Status: {{leaderboard_status}}
+
+Reason:
+{{reason}}
+
+Review your launch in Aarambh:
+{{manage_launch_url}}
+
+Aarambh
+Discover local businesses and the people behind them.
+{{app_url}}

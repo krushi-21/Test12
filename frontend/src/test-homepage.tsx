@@ -29,7 +29,7 @@ type FounderPageArtwork = { src: string; altText: string; fallbackSrc?: string; 
 const FOUNDER_LAUNCH_ARTWORK: Record<string, { src: string; altText: string }> = {
   'miti-handwoven-home-textiles': { src: '/images/launch-textile.jpg', altText: 'Textile stitching at an artisan work table' },
   'miti-woven-lighting': { src: '/images/launch-craft.webp', altText: 'A synthetic artisan craft collage with woven textiles and pottery' },
-  'miti-artisan-tableware': { src: '/images/growth-maker.jpg', altText: 'A maker shaping pottery in a workshop' },
+  'miti-artisan-tableware': { src: '/images/launch-ceramics.jpg', altText: 'Hand-thrown terracotta and ivory ceramic vessels displayed on linen' },
 }
 
 function founderPageArtwork(launch: Launch, launches: Launch[]): FounderPageArtwork {

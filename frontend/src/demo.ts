@@ -16,8 +16,8 @@ export const DEMO_LAUNCHES: LaunchCardData[] = [
     id: 'sample-launch-kala', slug: 'kala-clay-monsoon-objects', title: 'Objects that bring the monsoon home', launchType: 'product',
     category: 'Home & Living', summary: 'Hand-thrown pieces inspired by the first rain on red earth.',
     story: 'A fictional Jaipur ceramics studio introduces a small collection of hand-finished home objects. Every business, person, place, story, and interaction shown here is synthetic sample content.',
-    images: [sampleImage('/images/launch-craft.webp', 'Synthetic sample image of a craftsperson shaping a terracotta vessel')],
-    brand: { id: 'sample-brand-kala', slug: 'kala-clay-studio', name: 'Kala Clay Studio', logoUrl: '/images/launch-craft.webp', category: 'Home & Living', description: 'A fictional ceramics studio making small-batch objects for everyday rituals.', tagline: 'Clay, made personal.', city: 'Jaipur', state: 'Rajasthan' },
+    images: [sampleImage('/images/launch-ceramics.jpg', 'Synthetic sample photo of hand-thrown terracotta and ivory ceramic vessels in a sunlit studio')],
+    brand: { id: 'sample-brand-kala', slug: 'kala-clay-studio', name: 'Kala Clay Studio', logoUrl: '/images/launch-ceramics.jpg', category: 'Home & Living', description: 'A fictional ceramics studio making small-batch objects for everyday rituals.', tagline: 'Clay, made personal.', city: 'Jaipur', state: 'Rajasthan' },
     founders: [{ id: 'sample-founder-ananya', displayName: 'Ananya Mehta', role: 'Fictional founder' }], location: { city: 'Jaipur', state: 'Rajasthan' },
   },
   {

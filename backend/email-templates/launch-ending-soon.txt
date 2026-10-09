@@ -1,0 +1,14 @@
+Hello {{display_name}},
+
+Your launch is scheduled to end within the next 48 hours.
+
+{{launch_title}}
+{{business_name}}
+Scheduled end: {{end_time}} (Asia/Kolkata)
+
+Review your launch:
+{{manage_launch_url}}
+
+Aarambh
+Discover local businesses and the people behind them.
+{{app_url}}
