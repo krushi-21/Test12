@@ -13,3 +13,5 @@ Catalog-photo uploads use the existing normalized image pipeline and media asset
 All write-enabled feature flows remain available only in the isolated synthetic test preview unless a separately reviewed production deployment is configured. In-memory preview rows reset when that preview stops.
 
 For the first-launch implementation, migration and API tests use only fresh `:memory:` databases. No pre-existing persistent SQLite database was opened, migrated, seeded, or altered; migration 005 is staged for a later, explicitly reviewed deployment.
+
+`009_profile_media_details.sql` adds founder pronouns/interests and business cover/gallery columns. For this change it has been exercised only on fresh `:memory:` test databases and has not been applied to any persistent database.

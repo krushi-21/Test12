@@ -20,7 +20,7 @@ type ProfileViewer = { id: string; displayName: string; email: string; emailVeri
 type RankedLaunch = { rank: number; score: number; launch: Launch }
 type RankedBusiness = { rank: number; score: number; business: Business }
 type ApiPage<T> = { items: T[] }
-type HomeFounder = { id: string; slug: string; displayName: string; bio?: string; city?: string; state?: string; role?: string; avatarUrl?: string; brands: Array<{ id: string; slug: string; name: string; category: string; city?: string; state?: string }> }
+type HomeFounder = { id: string; slug: string; displayName: string; bio?: string; city?: string; state?: string; role?: string; pronouns?: string; interests?: string[]; avatarUrl?: string; brands: Array<{ id: string; slug: string; name: string; category: string; city?: string; state?: string }> }
 type PublicCollection = { id: string; name: string; description?: string; isPublic: boolean; shareUrl?: string; launchCount: number; launches: Launch[] }
 type ApiError = { error?: { message?: string } }
 
@@ -407,14 +407,14 @@ export function SyntheticFounderPage({ slug, user }: { slug: string; user: Profi
     launches: collection.launches.filter(launch => founderLaunchIds.has(launch.id))
   })).filter(collection => collection.launches.length > 0)
   const location = [currentFounder?.city, currentFounder?.state].filter(Boolean).join(', ')
-  const roleAndLocation = [currentFounder?.role, location].filter(Boolean).join(' · ')
+  const roleAndLocation = [currentFounder?.role, currentFounder?.pronouns, location].filter(Boolean).join(' · ')
   return <section className="test-content-width test-feature-page home-founder-page" aria-label="Public founder profile">
     <Link className="test-back-link" to="/test">← Back to Aarambh</Link>
     {loadedSlug !== slug ? <div className="test-notice">Loading founder profile…</div> : error ? <div className="test-notice test-notice-error">{error}</div> : !currentFounder ? <div className="test-notice">Loading founder profile…</div> : <>
       <header className="home-founder-hero">
         <div className="home-founder-identity">
           <FounderPortrait key={`${currentFounder.id}:${currentFounder.avatarUrl || ''}`} founder={currentFounder} />
-          <div className="home-founder-intro"><span className="test-eyebrow">PUBLIC FOUNDER PROFILE</span><h1>{currentFounder.displayName}</h1>{roleAndLocation && <p className="home-founder-location"><MapPin size={15} aria-hidden="true" />{roleAndLocation}</p>}{currentFounder.bio && <p className="home-founder-bio">{currentFounder.bio}</p>}</div>
+          <div className="home-founder-intro"><span className="test-eyebrow">PUBLIC FOUNDER PROFILE</span><h1>{currentFounder.displayName}</h1>{roleAndLocation && <p className="home-founder-location"><MapPin size={15} aria-hidden="true" />{roleAndLocation}</p>}{currentFounder.bio && <p className="home-founder-bio">{currentFounder.bio}</p>}{currentFounder.interests?.length ? <div className="home-founder-interests" aria-label="Founder interests">{currentFounder.interests.map((interest, index) => <span key={`${interest}-${index}`}>{interest}</span>)}</div> : null}</div>
         </div>
         <section className="home-founder-current" aria-labelledby="founder-current-heading">
           <h2 id="founder-current-heading">Current business</h2>

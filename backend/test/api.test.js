@@ -133,12 +133,14 @@ test('multi-brand workspace, private-by-default profile data, weighted launch ra
   ctx.db.prepare("UPDATE users SET role = 'moderator' WHERE id = ?").run(moderator.userId);
 
   const profileCreated = await owner.client.post('/api/me/founder-profile').send({ profile: {
-    displayName: 'Public Founder', publicProfile: true,
+    displayName: 'Public Founder', publicProfile: true, pronouns: 'they/them', interests: ['Craft', 'Community'],
     financial: { revenueRange: '₹5–10 lakh', revenuePeriod: 'monthly' }
   } });
   assert.equal(profileCreated.status, 201, JSON.stringify(profileCreated.body));
   const profileId = profileCreated.body.item.id;
   assert.equal(profileCreated.body.item.financial.revenuePublic, false);
+  assert.equal(profileCreated.body.item.pronouns, 'they/them');
+  assert.deepEqual(profileCreated.body.item.interests, ['Craft', 'Community']);
 
   const logo1 = await uploadImage(owner.client, 'brand-logo');
   const logo2 = await uploadImage(owner.client, 'brand-logo', { r: 110, g: 72, b: 210 });
@@ -161,6 +163,8 @@ test('multi-brand workspace, private-by-default profile data, weighted launch ra
   assert.equal(publicProfileBeforeOptIn.body.item.brands.length, 1);
   assert.equal(publicProfileBeforeOptIn.body.item.brands[0].id, brand1.id);
   assert.equal(publicProfileBeforeOptIn.body.item.financial, undefined);
+  assert.equal(publicProfileBeforeOptIn.body.item.pronouns, 'they/them');
+  assert.deepEqual(publicProfileBeforeOptIn.body.item.interests, ['Craft', 'Community']);
   assert.equal(JSON.stringify(publicProfileBeforeOptIn.body).includes('owner@example.com'), false);
   const optIn = await owner.client.patch('/api/me/founder-profile').send({ profile: { financial: { revenuePublic: true } } });
   assert.equal(optIn.status, 200);
@@ -511,4 +515,87 @@ test('product-image uploads are available to authorized catalog owners in isolat
     .attach('file', await sharp({ create: { width: 12, height: 12, channels: 3, background: '#336699' } }).png().toBuffer(), { filename: 'ordinary-product.png', contentType: 'image/png' });
   assert.equal(response.status, 201, JSON.stringify(response.body));
   assert.equal(ctx.db.prepare('SELECT purpose FROM media_assets WHERE id = ?').get(response.body.asset.id).purpose, 'launch-carousel');
+});
+
+test('founder pronouns/interests and business cover/gallery persist through profile APIs', async t => {
+  const ctx = await makeContext(t, { previewReadOnly: false });
+  const owner = await verifiedUser(ctx, 'Synthetic Profile Owner', 'profile-fields@example.com');
+
+  const profileCreated = await owner.client.post('/api/me/founder-profile').send({ profile: {
+    displayName: 'Synthetic Profile Owner', publicProfile: true, pronouns: ' she/her ',
+    interests: 'Ceramics, slow design, textiles', verified: true, verificationStatus: 'verified'
+  } });
+  assert.equal(profileCreated.status, 201, JSON.stringify(profileCreated.body));
+  const profileId = profileCreated.body.item.id;
+  assert.equal(profileCreated.body.item.pronouns, 'she/her');
+  assert.deepEqual(profileCreated.body.item.interests, ['Ceramics', 'slow design', 'textiles']);
+  assert.equal(profileCreated.body.item.verified, undefined, 'verification is not profile-controlled');
+  const storedProfile = ctx.db.prepare('SELECT pronouns, interests_json FROM founder_profiles WHERE id = ?').get(profileId);
+  assert.equal(storedProfile.pronouns, 'she/her');
+  assert.deepEqual(JSON.parse(storedProfile.interests_json), ['Ceramics', 'slow design', 'textiles']);
+
+  const profilePatch = await owner.client.patch('/api/me/founder-profile').send({ profile: {
+    pronouns: 'they/them', interests: ['Community building', 'Design']
+  } });
+  assert.equal(profilePatch.status, 200, JSON.stringify(profilePatch.body));
+  assert.equal(profilePatch.body.item.pronouns, 'they/them');
+  assert.deepEqual(profilePatch.body.item.interests, ['Community building', 'Design']);
+  const publicFounder = await request(ctx.app).get(`/api/founders/${profileId}`);
+  assert.equal(publicFounder.status, 200);
+  assert.equal(publicFounder.body.item.pronouns, 'they/them');
+  assert.deepEqual(publicFounder.body.item.interests, ['Community building', 'Design']);
+  assert.equal(publicFounder.body.item.verified, undefined);
+  const invalidInterests = await owner.client.patch('/api/me/founder-profile').send({ profile: { interests: ['1', '2', '3', '4', '5', '6', '7', '8', '9'] } });
+  assert.equal(invalidInterests.status, 422);
+  const clearFounderDetails = await owner.client.patch('/api/me/founder-profile').send({ profile: { pronouns: null, interests: [] } });
+  assert.equal(clearFounderDetails.status, 200, JSON.stringify(clearFounderDetails.body));
+  assert.equal(clearFounderDetails.body.item.pronouns, undefined);
+  assert.deepEqual(clearFounderDetails.body.item.interests, []);
+
+  const brandCreated = await owner.client.post('/api/me/brands').send({ brand: {
+    name: 'Synthetic Gallery Studio', description: 'A fictional business for profile API tests.', category: 'arts-crafts',
+    websiteUrl: 'https://gallery.example.invalid', coverImageUrl: 'https://images.example.invalid/cover.webp',
+    galleryImageUrls: ['https://images.example.invalid/gallery-one.webp', '/images/gallery-two.jpg']
+  } });
+  assert.equal(brandCreated.status, 201, JSON.stringify(brandCreated.body));
+  const brandId = brandCreated.body.item.id;
+  const brandSlug = brandCreated.body.item.slug;
+  assert.equal(brandCreated.body.item.coverImageUrl, 'https://images.example.invalid/cover.webp');
+  assert.deepEqual(brandCreated.body.item.galleryImageUrls, ['https://images.example.invalid/gallery-one.webp', '/images/gallery-two.jpg']);
+  const storedBrand = ctx.db.prepare('SELECT cover_image_url, gallery_image_urls FROM brands WHERE id = ?').get(brandId);
+  assert.equal(storedBrand.cover_image_url, 'https://images.example.invalid/cover.webp');
+  assert.deepEqual(JSON.parse(storedBrand.gallery_image_urls), ['https://images.example.invalid/gallery-one.webp', '/images/gallery-two.jpg']);
+
+  const brandPatch = await owner.client.patch(`/api/me/brands/${brandId}`).send({ brand: {
+    galleryImageUrls: 'https://images.example.invalid/gallery-three.webp\n/images/gallery-four.png'
+  } });
+  assert.equal(brandPatch.status, 200, JSON.stringify(brandPatch.body));
+  assert.deepEqual(brandPatch.body.item.galleryImageUrls, ['https://images.example.invalid/gallery-three.webp', '/images/gallery-four.png']);
+  const partialBrandPatch = await owner.client.patch(`/api/me/brands/${brandId}`).send({ brand: { tagline: 'Synthetic test tagline' } });
+  assert.equal(partialBrandPatch.status, 200);
+  assert.equal(partialBrandPatch.body.item.coverImageUrl, 'https://images.example.invalid/cover.webp');
+  assert.deepEqual(partialBrandPatch.body.item.galleryImageUrls, ['https://images.example.invalid/gallery-three.webp', '/images/gallery-four.png']);
+
+  const invalidCover = await owner.client.patch(`/api/me/brands/${brandId}`).send({ brand: { coverImageUrl: 'http://images.example.invalid/not-https.webp' } });
+  assert.equal(invalidCover.status, 422);
+  const tooManyGalleryImages = await owner.client.patch(`/api/me/brands/${brandId}`).send({ brand: {
+    galleryImageUrls: Array.from({ length: 7 }, (_, index) => `https://images.example.invalid/${index}.webp`)
+  } });
+  assert.equal(tooManyGalleryImages.status, 422);
+
+  const clearMedia = await owner.client.patch(`/api/me/brands/${brandId}`).send({ brand: { coverImageUrl: '', galleryImageUrls: [] } });
+  assert.equal(clearMedia.status, 200, JSON.stringify(clearMedia.body));
+  assert.equal(clearMedia.body.item.coverImageUrl, undefined);
+  assert.deepEqual(clearMedia.body.item.galleryImageUrls, []);
+
+  const restoreMedia = await owner.client.patch(`/api/me/brands/${brandId}`).send({ brand: {
+    coverImageUrl: 'https://images.example.invalid/cover.webp',
+    galleryImageUrls: ['https://images.example.invalid/gallery-three.webp', '/images/gallery-four.png']
+  } });
+  assert.equal(restoreMedia.status, 200, JSON.stringify(restoreMedia.body));
+  ctx.db.prepare("UPDATE brands SET status = 'published' WHERE id = ?").run(brandId);
+  const publicBrand = await request(ctx.app).get(`/api/brands/${brandSlug}`);
+  assert.equal(publicBrand.status, 200, JSON.stringify(publicBrand.body));
+  assert.equal(publicBrand.body.item.coverImageUrl, 'https://images.example.invalid/cover.webp');
+  assert.deepEqual(publicBrand.body.item.galleryImageUrls, ['https://images.example.invalid/gallery-three.webp', '/images/gallery-four.png']);
 });

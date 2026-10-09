@@ -63,6 +63,10 @@
 .test-muted { color: #79847c; font-size: 11px; }
 .test-muted code, .test-workspace-card code { padding: 2px 4px; border-radius: 4px; color: #435047; background: #f0f2ec; font-size: .92em; }
 .test-brand-hero { margin: 8px 0 25px; padding: 18px; display: flex; align-items: center; gap: 18px; border: 1px solid #d9ded8; border-radius: 14px; background: #fff; }
+.test-brand-cover { max-height: 330px; margin: 8px 0 14px; overflow: hidden; border: 1px solid #d9ded8; border-radius: 14px; background: #f1eee6; }
+.test-brand-cover img { width: 100%; max-height: 330px; display: block; object-fit: cover; }
+.test-brand-gallery { margin: -10px 0 25px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.test-brand-gallery img { width: 100%; aspect-ratio: 4 / 3; display: block; border-radius: 10px; object-fit: cover; background: #f1eee6; }
 .test-brand-hero img { width: 90px; height: 90px; flex: 0 0 90px; border-radius: 14px; object-fit: cover; }
 .test-brand-hero h1 { margin: 4px 0; }
 .test-brand-hero p { max-width: 680px; margin: 4px 0; color: #526058; font-size: 13px; }
@@ -188,6 +192,7 @@
   .test-brand-hero { padding: 13px; align-items: flex-start; gap: 11px; }
   .test-brand-hero img { width: 62px; height: 62px; flex-basis: 62px; border-radius: 10px; }
   .test-brand-hero h1 { font-size: 22px; }
+  .test-brand-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
   .test-rank-list li { grid-template-columns: 30px minmax(0, 1fr); }
   .test-rank-list li > span { grid-column: 2; }
   .test-reset-row { align-items: stretch; flex-direction: column; }

@@ -27,6 +27,10 @@ Owner-only `BrandOwner` and `LaunchOwner` responses add `moderationLocked: boole
 
 Uploaded media URLs work for owner previews with the authenticated session. Draft assets return 404 to other viewers and use `private, no-store`; once the image is referenced by published public content, the media URL is publicly readable with `max-age=300, must-revalidate` to preserve takedown responsiveness. Public launch and brand response image URLs are unchanged.
 
+## Profile media and founder details
+
+Brand owner and public brand responses include optional `coverImageUrl` and ordered `galleryImageUrls` (up to six). The profile editor accepts HTTPS image URLs and safe bundled `/images/` paths; sending `coverImageUrl: null` or `galleryImageUrls: []` clears saved media. Founder owner/public profile responses include optional `pronouns` and an ordered `interests` array (up to eight labels, each at most 40 characters). Account email is not part of these fields or public profile serializers.
+
 ## Community For You feed contract
 
 Use optional-auth `GET /api/for-you?limit=20&cursor=…&city=&state=&category=` for Community's For You tab. This is a separate feed from `GET /api/me/following`; do not substitute one route for the other. The response is `{ items, nextCursor, coldStart, rankingMode }`; each `items[]` entry is the normal public launch card plus a string `recommendationReason`. Append pages with the returned opaque `nextCursor` and use the response flags to distinguish `personalized` from `popular_recent` cold-start results. `city` and `state` filter by business location, `category` filters by active category ID, and all three may be omitted. Responses are private/no-store; GET requests do not create impression or engagement events. See `API.md` for the ranking inputs, validation, and cold-start ordering.

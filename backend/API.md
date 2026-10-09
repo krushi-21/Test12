@@ -14,9 +14,9 @@ The full frontend field contract remains `/workspace/launch_platform_api_contrac
 | `GET` | `/api/for-you?limit=20&cursor=&city=&state=&category=` | Optional session; preview allowed | Separate personalized launch feed; returns `{ items, nextCursor, coldStart, rankingMode }`. Each normal launch card includes `recommendationReason`. |
 | `GET` | `/api/launches/upcoming` | Public; preview allowed | Upcoming scheduled launches; the main launches feed also supports `sort=new` and location/category/price/availability filters. |
 | `GET` | `/api/launches/:idOrSlug` | Public; preview allowed | Published launch detail. Preview is anonymous and omits viewer-specific state; no detail-view event is recorded. |
-| `GET` | `/api/brands/:slug` | Public; preview allowed | Published brand page and founder-selected public links, with aggregated `saveCount` and viewer-relative `isSaved`. |
+| `GET` | `/api/brands/:slug` | Public; preview allowed | Published brand page and founder-selected public links, with persisted `coverImageUrl`/`galleryImageUrls`, aggregated `saveCount`, and viewer-relative `isSaved`. |
 | `GET` | `/api/founders?query=&city=&state=` | Public; preview allowed | Paginated public founder directory; searches profile text/location and founder-selected published brand names. |
-| `GET` | `/api/founders/:idOrSlug` | Public; preview allowed | Only public, active founder profiles. |
+| `GET` | `/api/founders/:idOrSlug` | Public; preview allowed | Only public, active founder profiles, including public `pronouns` and `interests` when set. |
 | `GET` | `/api/businesses/leaderboard?period=monthly` | Public; preview allowed | Weekly/monthly business-level ranks, aggregating qualified engagement across eligible published launches with the same provisional 1/2/3 score weights. |
 | `GET` | `/api/leaderboard` | Public; preview allowed | Weekly/monthly Asia/Kolkata rankings; provisional score weights are in the shared contract. |
 | `POST` | `/api/launches/:idOrSlug/share` | Blocked in preview | Normally records a metric-only share event; returns `DEMO_READ_ONLY` in preview. |
@@ -52,13 +52,15 @@ Preview strips incoming `Cookie` and `Authorization` headers before authenticati
 
 | Method | Path | Access | Notes |
 |---|---|---|---|
-| `GET`, `POST` | `/api/me/founder-profile` | Signed-in | Read/create the founder profile. |
-| `PATCH` | `/api/me/founder-profile` | Signed-in | Update public profile, public brand selections, and private-by-default financial fields. |
-| `GET`, `POST` | `/api/me/brands` | Signed-in | List/create drafts; one founder may manage multiple brands. |
-| `PATCH` | `/api/me/brands/:id` | Owner | Update brand identity fields. |
+| `GET`, `POST` | `/api/me/founder-profile` | Signed-in | Read/create the founder profile, including optional `pronouns` and an `interests` array of up to 8 short strings. |
+| `PATCH` | `/api/me/founder-profile` | Signed-in | Update public profile (including pronouns/interests), public brand selections, and private-by-default financial fields. |
+| `GET`, `POST` | `/api/me/brands` | Signed-in | List/create drafts; one founder may manage multiple brands. Brand profiles support optional `coverImageUrl` and up to 6 `galleryImageUrls`. |
+| `PATCH` | `/api/me/brands/:id` | Owner | Update brand identity and persisted cover/gallery image URLs. |
 | `POST` | `/api/me/brands/:id/publish` | Verified owner | Publish only after required fields/assets are complete. |
 | `POST` | `/api/me/brands/:id/pause` | Owner | Pause an unlocked published brand. |
 | `POST` | `/api/me/brands/:id/archive` | Owner | Archive an unlocked brand. |
+
+Founder profile responses include `pronouns` and `interests` for the owner and for active public profiles. Brand owner and public brand responses include `coverImageUrl` and `galleryImageUrls`; gallery values are returned as arrays. Image fields accept HTTPS URLs or local `/images/<filename>` paths. Verification remains derived from backend account/moderation state and is not writable through profile fields.
 
 ## Launch posts, engagement, analytics
 

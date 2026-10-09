@@ -465,6 +465,8 @@
 .home-founder-location { margin: 8px 0 0; display: flex; align-items: center; gap: 5px; color: #666875; font-size: 12px; font-weight: 650; }
 .home-founder-location svg { flex: 0 0 auto; color: var(--aarambh-coral); }
 .home-founder-page .home-founder-bio { max-width: 720px; margin: 10px 0 0; color: #696b75; font-size: 13px; line-height: 1.55; }
+.home-founder-interests { margin: 11px 0 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.home-founder-interests > span { padding: 5px 9px; border: 1px solid var(--aarambh-border); border-radius: 999px; color: #455066; background: var(--aarambh-soft); font-size: 10px; font-weight: 700; }
 .home-founder-current { min-width: 0; }
 .home-founder-current > h2 { margin: 0 0 8px; color: #777783; font-size: 9px; font-weight: 820; letter-spacing: .11em; text-transform: uppercase; }
 .home-founder-business-list { display: grid; gap: 8px; }

@@ -44,6 +44,8 @@ export interface LaunchCardData {
 }
 
 export interface BrandPublic extends BrandSummary {
+  coverImageUrl?: string
+  galleryImageUrls?: string[]
   founders: FounderSummary[]
   launches: LaunchCardData[]
 }
@@ -52,4 +54,6 @@ export interface FounderPublic extends FounderSummary {
   bio: string
   city?: string
   state?: string
+  pronouns?: string
+  interests?: string[]
 }

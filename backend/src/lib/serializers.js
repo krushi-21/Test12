@@ -1,6 +1,12 @@
 import { notFound } from './errors.js';
 
 const defined = object => Object.fromEntries(Object.entries(object).filter(([, value]) => value !== undefined && value !== null));
+function parseStringArray(value) {
+  try {
+    const parsed = JSON.parse(value || '[]');
+    return Array.isArray(parsed) ? parsed.filter(item => typeof item === 'string') : [];
+  } catch { return []; }
+}
 
 export function getFounderPrivate(db, profile) {
   if (!profile) return null;
@@ -12,6 +18,7 @@ export function getFounderPrivate(db, profile) {
   });
   return { id: profile.id, slug: profile.slug, displayName: profile.display_name, avatarUrl: profile.avatar_url ?? undefined,
     bio: profile.bio ?? undefined, city: profile.city ?? undefined, state: profile.state ?? undefined, role: profile.role ?? undefined,
+    pronouns: profile.pronouns ?? undefined, interests: parseStringArray(profile.interests_json),
     instagramUrl: profile.instagram_url ?? undefined, publicProfile: Boolean(profile.public_profile), publicBrandIds,
     financial, updatedAt: profile.updated_at };
 }
@@ -35,12 +42,14 @@ export function publicFounder(db, profile) {
     hasFinancial = true;
   }
   return defined({ id: profile.id, slug: profile.slug, displayName: profile.display_name, avatarUrl: profile.avatar_url,
-    bio: profile.bio, city: profile.city, state: profile.state, role: profile.role, instagramUrl: profile.instagram_url,
+    bio: profile.bio, city: profile.city, state: profile.state, role: profile.role, pronouns: profile.pronouns,
+    interests: parseStringArray(profile.interests_json), instagramUrl: profile.instagram_url,
     brands, financial: hasFinancial ? financial : undefined });
 }
 
 function publicBrandFields(row) {
-  return defined({ id: row.id, slug: row.slug, name: row.name, logoUrl: row.logo_url, description: row.description,
+  return defined({ id: row.id, slug: row.slug, name: row.name, logoUrl: row.logo_url, coverImageUrl: row.cover_image_url,
+    galleryImageUrls: parseStringArray(row.gallery_image_urls), description: row.description,
     category: row.category, tagline: row.tagline, city: row.city, state: row.state, area: row.area, address: row.address,
     latitude: row.latitude, longitude: row.longitude, openingHours: parseOpeningHours(row.opening_hours), businessMode: row.business_mode,
     contactPhone: row.contact_phone, contactEmail: row.contact_email, foundedYear: row.founded_year,

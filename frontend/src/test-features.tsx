@@ -4,6 +4,7 @@ import './for-you.css'
 import './collection-visual.css'
 import './profile-editor.css'
 import './feature-pages-visual.css'
+import { parseBusinessGallery, parseFounderInterests, profilePreviewImageUrl, validateProfileImageUrl } from './profile-validation'
 
 type User = { id: string; displayName: string; email: string; emailVerified: boolean }
 type Category = { id: string; name: string; slug: string }
@@ -762,6 +763,9 @@ type OwnedProfileBrand = Record<string, unknown> & {
   id: string
   name: string
   logoUrl?: string
+  coverImageUrl?: string | null
+  galleryImageUrls?: string[]
+  openingHours?: unknown
   description?: string
   tagline?: string
   category?: string
@@ -787,20 +791,11 @@ function businessFieldsFrom(brand: OwnedProfileBrand) {
   ].map(key => [key, String(brand[key] ?? (key === 'businessMode' ? 'online' : ''))])) as Record<string, string>
 }
 
-const SAMPLE_BUSINESS_COVER = '/images/launch-craft.webp'
-const SAMPLE_BUSINESS_GALLERY = ['/images/launch-home.jpg', '/images/launch-textile.jpg', '/images/growth-maker.jpg']
-function profilePreviewImageUrl(value: string): string {
-  const candidate = value.trim()
-  if (candidate.startsWith('/images/')) return candidate
-  try { const parsed = new URL(candidate); return parsed.protocol === 'https:' ? parsed.href : '' }
-  catch { return '' }
-}
 function businessMediaPreviewFrom(brand: OwnedProfileBrand) {
   const gallery = brand.galleryImageUrls
-  const galleryUrls = Array.isArray(gallery) ? gallery.map(String).join('\n') : typeof gallery === 'string' && gallery.trim() ? gallery : SAMPLE_BUSINESS_GALLERY.join('\n')
-  return { coverUrl: String(brand.coverImageUrl || SAMPLE_BUSINESS_COVER), galleryUrls }
+  const galleryUrls = Array.isArray(gallery) ? gallery.map(String).join('\n') : ''
+  return { coverUrl: String(brand.coverImageUrl || ''), galleryUrls }
 }
-
 export function BusinessProfileEditorPage({ user }: { user: User | null }) {
   const [brands, setBrands] = useState<OwnedProfileBrand[]>([])
   const [categories, setCategories] = useState<ProfileCategory[]>([])
@@ -813,7 +808,7 @@ export function BusinessProfileEditorPage({ user }: { user: User | null }) {
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [previewOpen, setPreviewOpen] = useState(false)
-  const [mediaPreview, setMediaPreview] = useState({ coverUrl: SAMPLE_BUSINESS_COVER, galleryUrls: SAMPLE_BUSINESS_GALLERY.join('\n') })
+  const [mediaPreview, setMediaPreview] = useState({ coverUrl: '', galleryUrls: '' })
   const logoInput = useRef<HTMLInputElement | null>(null)
   const selectedBrand = brands.find(item => item.id === selected) || null
 
@@ -872,15 +867,19 @@ export function BusinessProfileEditorPage({ user }: { user: User | null }) {
     try {
       const brand = brands.find(item => item.id === selected)
       if (!brand) throw new Error('Choose a business.')
+      const coverImageUrl = validateProfileImageUrl(mediaPreview.coverUrl, 'Cover image')
+      const galleryImageUrls = parseBusinessGallery(mediaPreview.galleryUrls)
       const stringFields = ['name', 'logoUrl', 'description', 'category', 'websiteUrl', 'instagramUrl', 'whatsappUrl', 'tagline', 'city', 'state', 'area', 'address', 'contactPhone', 'contactEmail', 'quoteUrl', 'demoUrl', 'storeUrl']
-      const payload: Record<string, unknown> = { businessMode: form.businessMode || 'online', openingHours: hours }
+      const payload: Record<string, unknown> = { businessMode: form.businessMode || 'online', openingHours: hours, coverImageUrl: coverImageUrl || null, galleryImageUrls }
       for (const key of stringFields) if (form[key]?.trim()) payload[key] = form[key].trim()
       if (form.foundedYear.trim()) payload.foundedYear = Number(form.foundedYear)
       const latitude = Number(form.latitude), longitude = Number(form.longitude)
       if (form.latitude.trim() && Number.isFinite(latitude)) payload.latitude = latitude
       if (form.longitude.trim() && Number.isFinite(longitude)) payload.longitude = longitude
       const result = await api<{ item: OwnedProfileBrand }>(`/me/brands/${selected}`, { method: 'PATCH', body: body({ brand: payload }) })
-      setBrands(old => old.map(item => item.id === selected ? { ...item, ...payload, openingHours: hours, ...(result.item?.id === selected ? result.item : {}) } : item))
+      const updatedBrand: OwnedProfileBrand = result.item?.id === selected ? result.item : { ...brand, ...payload, openingHours: hours }
+      setBrands(old => old.map(item => item.id === selected ? { ...item, ...updatedBrand } : item))
+      setMediaPreview(businessMediaPreviewFrom(updatedBrand))
       setNotice('Business profile and weekly hours saved. Open-now discovery uses Asia/Kolkata.')
     } catch (err) { setNotice(message(err)); setNoticeIsError(true) }
     finally { setBusy(false) }
@@ -896,7 +895,7 @@ export function BusinessProfileEditorPage({ user }: { user: User | null }) {
     finally { setBusy(false) }
   }
   const location = [form.address, form.area, form.city, form.state].filter(Boolean).join(', ')
-  const businessProfileDirty = Boolean(selectedBrand) && (JSON.stringify(form) !== JSON.stringify(businessFieldsFrom(selectedBrand!)) || JSON.stringify(hours) !== JSON.stringify(normalizeHours(selectedBrand!.openingHours)))
+  const businessProfileDirty = Boolean(selectedBrand) && (JSON.stringify(form) !== JSON.stringify(businessFieldsFrom(selectedBrand!)) || JSON.stringify(hours) !== JSON.stringify(normalizeHours(selectedBrand!.openingHours)) || JSON.stringify(mediaPreview) !== JSON.stringify(businessMediaPreviewFrom(selectedBrand!)))
   const configuredDays = Object.keys(hours).length
   const categoryName = categories.find(item => item.id === form.category)?.name || form.category
   const status = String(selectedBrand?.status || 'draft').replaceAll('_', ' ')
@@ -949,9 +948,8 @@ export function BusinessProfileEditorPage({ user }: { user: User | null }) {
           <div className="test-profile-upload-row">{form.logoUrl ? <img src={form.logoUrl} alt="Current business logo" /> : <span className="test-profile-upload-placeholder">{form.name?.slice(0, 1).toUpperCase() || 'B'}</span>}<div><strong>Business logo</strong><p>Upload a JPEG, PNG, or WebP image up to 5 MiB.</p><input ref={logoInput} className="test-profile-file-input" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose business logo" onChange={event => void uploadLogo(event.target.files?.[0])} /><button type="button" className="test-button test-button-secondary" disabled={uploading} onClick={() => logoInput.current?.click()}>{uploading ? 'Uploading…' : form.logoUrl ? 'Replace logo' : 'Upload logo'}</button></div></div>
         </section>
         <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>02</span><div><h3>Cover &amp; gallery</h3><p>Shape the imagery in your public profile preview.</p></div></div>
-          <label className="test-field"><span>Cover image URL (preview only)</span><input type="text" inputMode="url" pattern="(https://.+|/images/.+)?" title="Use an HTTPS URL or a local /images/ path." value={mediaPreview.coverUrl} onChange={event => setMediaPreview(old => ({ ...old, coverUrl: event.target.value }))} placeholder="https://example.invalid/cover.webp" /></label>
-          <label className="test-field"><span>Gallery image URLs (one per line, preview only)</span><textarea rows={3} maxLength={1200} value={mediaPreview.galleryUrls} onChange={event => setMediaPreview(old => ({ ...old, galleryUrls: event.target.value }))} placeholder="https://example.invalid/image.webp" /></label>
-          <p className="test-profile-preview-only-note" role="note">These controls update the preview only. Cover and gallery media are not saved by the current profile API.</p>
+          <label className="test-field"><span>Cover image URL</span><input type="text" inputMode="url" maxLength={2048} value={mediaPreview.coverUrl} onChange={event => setMediaPreview(old => ({ ...old, coverUrl: event.target.value }))} placeholder="https://example.invalid/cover.webp or /images/cover.webp" /><small>Use an HTTPS image URL or a bundled /images/ path. Leave blank to clear.</small></label>
+          <label className="test-field"><span>Gallery image URLs (one per line)</span><textarea rows={3} maxLength={12300} value={mediaPreview.galleryUrls} onChange={event => setMediaPreview(old => ({ ...old, galleryUrls: event.target.value }))} placeholder="https://example.invalid/image.webp" /><small>Up to 6 unique URLs; each URL may be up to 2,048 characters.</small></label>
         </section>
         <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>03</span><div><h3>Location &amp; hours</h3><p>Set the public location and how customers can visit.</p></div></div>
           <div className="test-form-grid">{[['city', 'City'], ['state', 'State'], ['area', 'Area / neighbourhood'], ['address', 'Public address']].map(([key, label]) => <label className="test-field" key={key}><span>{label}</span><input maxLength={key === 'address' ? 300 : key === 'area' ? 100 : 80} value={form[key] || ''} onChange={event => set(key, event.target.value)} /></label>)}
@@ -1037,11 +1035,13 @@ export function FounderProfileEditorPage({ user }: { user: User | null }) {
     try {
       const payload = {
         displayName: fields.displayName, avatarUrl: fields.avatarUrl, bio: fields.bio, city: fields.city, state: fields.state,
-        role: fields.role, instagramUrl: fields.instagramUrl, publicProfile: fields.publicProfile,
+        role: fields.role, pronouns: fields.pronouns.trim() || null, interests: parseFounderInterests(fields.interests),
+        instagramUrl: fields.instagramUrl, publicProfile: fields.publicProfile,
         publicBrandIds: fields.publicBrandIds.filter(id => publishedBrands.some(brand => brand.id === id))
       }
       const result = await api<{ item: Record<string, unknown> }>('/me/founder-profile', { method: 'PATCH', body: body({ profile: payload }) })
       setProfile(result.item)
+      setFields(old => ({ ...old, pronouns: String(result.item.pronouns || ''), interests: Array.isArray(result.item.interests) ? result.item.interests.map(String).join(', ') : '' }))
       setNotice('Founder profile updated.')
     } catch (err) { setNotice(message(err)); setNoticeIsError(true) }
     finally { setBusy(false) }
@@ -1073,13 +1073,12 @@ export function FounderProfileEditorPage({ user }: { user: User | null }) {
         <div className="test-profile-card-header"><div><span className="test-eyebrow">PROFILE EDITOR</span><h2>About you</h2></div><span className={`test-profile-status ${fields.publicProfile ? 'is-public' : 'is-private'}`}>{fields.publicProfile ? 'Public profile' : 'Private profile'}</span></div>
         <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>01</span><div><h3>Your identity</h3><p>Set your name, role, and public portrait.</p></div></div>
           <label className="test-field"><span>Display name</span><input required maxLength={80} value={fields.displayName} onChange={event => set('displayName', event.target.value)} /><small aria-live="polite">{fields.displayName.length}/80</small></label>
-          <div className="test-form-grid"><label className="test-field"><span>Role</span><input maxLength={80} value={fields.role} onChange={event => set('role', event.target.value)} placeholder="Founder, designer, maker…" /></label><label className="test-field"><span>Pronouns (preview only)</span><input maxLength={40} value={fields.pronouns} onChange={event => set('pronouns', event.target.value)} placeholder="e.g. she/her" /></label><label className="test-field"><span>City</span><input maxLength={80} value={fields.city} onChange={event => set('city', event.target.value)} /></label><label className="test-field"><span>State</span><input maxLength={80} value={fields.state} onChange={event => set('state', event.target.value)} /></label></div>
+          <div className="test-form-grid"><label className="test-field"><span>Role</span><input maxLength={80} value={fields.role} onChange={event => set('role', event.target.value)} placeholder="Founder, designer, maker…" /></label><label className="test-field"><span>Pronouns</span><input maxLength={40} value={fields.pronouns} onChange={event => set('pronouns', event.target.value)} placeholder="e.g. she/her" /><small>{fields.pronouns.length}/40</small></label><label className="test-field"><span>City</span><input maxLength={80} value={fields.city} onChange={event => set('city', event.target.value)} /></label><label className="test-field"><span>State</span><input maxLength={80} value={fields.state} onChange={event => set('state', event.target.value)} /></label></div>
           <div className="test-profile-upload-row">{fields.avatarUrl ? <img className="is-round" src={fields.avatarUrl} alt="Current founder portrait" /> : <span className="test-profile-upload-placeholder is-round">{fields.displayName.trim().slice(0, 1).toUpperCase() || 'F'}</span>}<div><strong>Portrait</strong><p>Upload a JPEG, PNG, or WebP image up to 5 MiB.</p><input ref={avatarInput} className="test-profile-file-input" type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose founder portrait" onChange={event => void uploadAvatar(event.target.files?.[0])} /><button type="button" className="test-button test-button-secondary" disabled={uploading} onClick={() => avatarInput.current?.click()}>{uploading ? 'Uploading…' : fields.avatarUrl ? 'Replace portrait' : 'Upload portrait'}</button></div></div>
         </section>
         <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>02</span><div><h3>Your story</h3><p>Tell visitors what you are building and why.</p></div></div>
           <label className="test-field"><span>Short bio</span><textarea rows={5} maxLength={500} value={fields.bio} onChange={event => set('bio', event.target.value)} /><small aria-live="polite">{fields.bio.length}/500</small></label>
-          <label className="test-field"><span>Interests (preview only)</span><textarea rows={2} maxLength={240} value={fields.interests} onChange={event => set('interests', event.target.value)} placeholder="Ceramics, slow design, textiles" /><small>Separate interests with commas.</small></label>
-          <p className="test-profile-preview-only-note" role="note">Pronouns and interests update this preview only; the current profile API does not save these fields.</p>
+          <label className="test-field"><span>Interests</span><textarea rows={2} maxLength={240} value={fields.interests} onChange={event => set('interests', event.target.value)} placeholder="Ceramics, slow design, textiles" /><small>Separate up to 8 interests with commas; each may be up to 40 characters (240 characters total).</small></label>
           <label className="test-field"><span>Instagram profile (HTTPS)</span><input type="url" pattern="https://.+" title="Use a valid HTTPS URL." value={fields.instagramUrl} onChange={event => set('instagramUrl', event.target.value)} placeholder="https://instagram.com/…" /></label>
         </section>
         <section className="test-profile-editor-section"><div className="test-profile-section-heading"><span>03</span><div><h3>Linked businesses</h3><p>Choose published businesses that should appear with your founder profile.</p></div></div>

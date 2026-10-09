@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "smoke": "node scripts/smoke.mjs",
     "test-preview-ui": "node scripts/interactive-ui-smoke.mjs",
+    "test-profile-validation": "node --experimental-strip-types --test test/profile-validation.test.mjs",
     "test-community-ui": "node scripts/community-ui-test.mjs",
     "test-shared-shell-ui": "node scripts/shared-shell-navigation-smoke.mjs",
     "test-reference-ui": "node scripts/reference-screen-visual-smoke.mjs",

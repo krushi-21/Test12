@@ -170,7 +170,7 @@ const mockApi = `(() => {
   window.__editorUploadRequests = []
   window.__holdEditorPatch = false
   window.__resolveEditorPatch = null
-  const founderProfile = { id: 'founder-test', displayName: 'Test Founder', bio: 'Synthetic founder bio', city: 'Ahmedabad', state: 'Gujarat', role: 'Founder', publicProfile: true, publicBrandIds: ['business-test'] }
+  const founderProfile = { id: 'founder-test', displayName: 'Test Founder', bio: 'Synthetic founder bio', city: 'Ahmedabad', state: 'Gujarat', role: 'Founder', pronouns: 'they/them', interests: ['Ceramics'], publicProfile: true, publicBrandIds: ['business-test'] }
   const json = (payload, status = 200) => new Response(JSON.stringify(payload), { status, headers: { 'Content-Type': 'application/json' } })
   window.fetch = async (input, init = {}) => {
     const url = new URL(input instanceof Request ? input.url : String(input), location.href)
@@ -178,7 +178,7 @@ const mockApi = `(() => {
     const method = String(init.method || 'GET').toUpperCase()
     if (url.pathname === '/api/me' && method === 'GET') return json({ user: { id: 'user-test', displayName: 'Test Member', email: 'member@example.invalid', emailVerified: true } })
     if (url.pathname === '/api/categories' && method === 'GET') return json({ categories: [{ id: 'category-test', name: 'Wellness', slug: 'wellness' }] })
-    if (url.pathname === '/api/me/brands' && method === 'GET') return json({ items: [{ id: 'business-test', name: 'Test Business', logoUrl: '', description: 'A test business', category: 'category-test', city: '', area: '', address: '', latitude: null, longitude: null, businessMode: 'online', contactPhone: '', contactEmail: '', websiteUrl: '', whatsappUrl: '', quoteUrl: '', demoUrl: '', storeUrl: '', openingHours: {}, status: location.pathname === '/test/founder-profile' ? 'published' : 'draft' }] })
+    if (url.pathname === '/api/me/brands' && method === 'GET') return json({ items: [{ id: 'business-test', name: 'Test Business', logoUrl: '', description: 'A test business', category: 'category-test', coverImageUrl: 'https://assets.example.invalid/saved-cover.webp', galleryImageUrls: ['https://assets.example.invalid/saved-one.webp', '/images/launch-textile.jpg', '/images/growth-maker.jpg'], city: '', area: '', address: '', latitude: null, longitude: null, businessMode: 'online', contactPhone: '', contactEmail: '', websiteUrl: '', whatsappUrl: '', quoteUrl: '', demoUrl: '', storeUrl: '', openingHours: {}, status: location.pathname === '/test/founder-profile' ? 'published' : 'draft' }] })
     if (url.pathname === '/api/me/founder-profile' && method === 'GET') return json({ item: founderProfile })
     if (url.pathname === '/api/uploads' && method === 'POST') {
       window.__editorUploadRequests.push({ purpose: init.body?.get?.('purpose') })
@@ -230,9 +230,9 @@ try {
   assert.equal(await evaluate('Boolean(document.querySelector(".test-business-live-card") && [...document.querySelectorAll(".test-profile-form label")].some(label => label.querySelector("span")?.textContent.trim() === "Category"))'), true, 'business identity/category editor and live card should be present')
   assert.equal(await evaluate('Boolean(document.querySelector(".test-business-live-cover img") && document.querySelectorAll(".test-business-live-gallery img").length === 3)'), true, 'business cover and gallery images should appear in the live preview')
   assert.equal(await evaluate('document.querySelector(".test-business-verification-panel")?.innerText.includes("Badge design preview") && document.querySelector(".test-business-verification-panel")?.innerText.includes("cannot award a badge")'), true, 'business verification preview must be clearly illustrative, not an unsupported claim')
-  assert.equal(await evaluate('[...document.querySelectorAll(".test-business-profile-form label")].some(label => label.textContent.includes("Cover image URL (preview only)")) && [...document.querySelectorAll(".test-business-profile-form label")].some(label => label.textContent.includes("Gallery image URLs"))'), true, 'cover and gallery editors should be available')
-  await setField('Cover image URL (preview only)', 'https://assets.example.invalid/cover.webp')
-  await setField('Gallery image URLs (one per line, preview only)', 'https://assets.example.invalid/gallery-one.webp\n/images/launch-textile.jpg')
+  assert.equal(await evaluate('[...document.querySelectorAll(".test-business-profile-form label")].some(label => label.textContent.includes("Cover image URL")) && [...document.querySelectorAll(".test-business-profile-form label")].some(label => label.textContent.includes("Gallery image URLs"))'), true, 'cover and gallery editors should be available')
+  await setField('Cover image URL', 'https://assets.example.invalid/cover.webp')
+  await setField('Gallery image URLs (one per line)', 'https://assets.example.invalid/gallery-one.webp\n/images/launch-textile.jpg')
   assert.equal(await evaluate('document.querySelector(".test-business-live-cover img")?.src.includes("assets.example.invalid/cover.webp") && document.querySelectorAll(".test-business-live-gallery img").length === 2'), true, 'editable media URLs should update the business preview')
   await assertEditorResponsiveLayout()
   await evaluate('document.querySelector(".test-profile-publish-panel button.test-button-secondary")?.click()')
@@ -295,7 +295,8 @@ try {
   const businessRequest = await evaluate('window.__editorPatchRequests[0]')
   assert.equal(businessRequest.path, '/api/me/brands/business-test')
   const businessPayload = JSON.parse(businessRequest.body).brand
-  for (const key of ['coverImageUrl', 'galleryImageUrls']) assert.equal(Object.hasOwn(businessPayload, key), false, `${key} must not be sent to an API that does not support profile media`)
+  assert.equal(businessPayload.coverImageUrl, 'https://assets.example.invalid/cover.webp', 'cover image edits should be persisted through the brand API')
+  assert.deepEqual(businessPayload.galleryImageUrls, ['https://assets.example.invalid/gallery-one.webp', '/images/launch-textile.jpg'], 'gallery URLs should be normalized and persisted as an array')
   for (const key of ['city', 'area', 'address', 'latitude', 'longitude', 'contactPhone', 'contactEmail', 'websiteUrl', 'whatsappUrl', 'quoteUrl', 'demoUrl', 'storeUrl']) {
     assert.equal(Object.hasOwn(businessPayload, key), false, `blank optional ${key} should stay omitted from the PATCH payload`)
   }
@@ -317,10 +318,10 @@ try {
   await waitForExpression('Boolean(document.querySelector(".test-profile-form textarea"))', 'founder profile editor')
   await waitForExpression('document.querySelector(".test-profile-form input")?.value === "Test Founder"', 'founder profile data')
   assert.equal(await evaluate('Boolean(document.querySelector(".test-founder-live-card") && document.querySelector(".test-founder-business-picker input:checked"))'), true, 'founder preview and supported linked-business selection should be present')
-  assert.equal(await evaluate('[...document.querySelectorAll(".test-founder-profile-form label")].some(label => label.textContent.includes("Pronouns (preview only)")) && [...document.querySelectorAll(".test-founder-profile-form label")].some(label => label.textContent.includes("Interests (preview only)"))'), true, 'founder editor should expose pronouns and interests')
+  assert.equal(await evaluate('[...document.querySelectorAll(".test-founder-profile-form label")].some(label => label.textContent.includes("Pronouns")) && [...document.querySelectorAll(".test-founder-profile-form label")].some(label => label.textContent.includes("Interests"))'), true, 'founder editor should expose pronouns and interests')
   assert.equal(await evaluate('document.querySelector(".test-founder-verification-panel")?.innerText.includes("Badge design preview") && document.querySelector(".test-founder-verification-panel")?.innerText.includes("cannot award a badge")'), true, 'founder verification preview must be clearly illustrative')
-  await setField('Pronouns (preview only)', 'she/her')
-  await setField('Interests (preview only)', 'Ceramics, slow design')
+  await setField('Pronouns', 'she/her')
+  await setField('Interests', 'Ceramics, slow design')
   assert.equal(await evaluate('document.querySelector(".test-founder-live-identity")?.innerText.includes("she/her") && document.querySelector(".test-founder-live-interests")?.innerText.includes("slow design")'), true, 'founder profile preview should reflect editable pronouns and interests')
   await assertEditorResponsiveLayout()
   await evaluate('[...document.querySelectorAll(".test-founder-profile-form .test-profile-form-actions button")].find(button => button.textContent.includes("Preview"))?.click()')
@@ -353,14 +354,15 @@ try {
   assert.equal(founderRequest.path, '/api/me/founder-profile')
   assert.equal(JSON.parse(founderRequest.body).profile.displayName, 'Test Founder')
   assert.equal(JSON.parse(founderRequest.body).profile.avatarUrl, 'https://assets.example.invalid/profile-image.webp')
-  assert.equal(Object.hasOwn(JSON.parse(founderRequest.body).profile, 'pronouns'), false, 'preview-only pronouns must not be sent to the unsupported API')
-  assert.equal(Object.hasOwn(JSON.parse(founderRequest.body).profile, 'interests'), false, 'preview-only interests must not be sent to the unsupported API')
+  assert.equal(JSON.parse(founderRequest.body).profile.pronouns, 'she/her', 'pronouns should be saved through the founder API')
+  assert.deepEqual(JSON.parse(founderRequest.body).profile.interests, ['Ceramics', 'slow design'], 'interests should be normalized and saved as an array')
+  assert.equal(Object.hasOwn(JSON.parse(founderRequest.body).profile, 'verified'), false, 'verification must not be user-controlled')
   assert.deepEqual(JSON.parse(founderRequest.body).profile.publicBrandIds, ['business-test'], 'only the supported public-brand IDs should be submitted')
   await evaluate('window.__resolveEditorPatch?.()')
   await waitForExpression('document.querySelector(".test-profile-form button[type=submit]").textContent.includes("Save founder profile")', 'founder save to finish')
   assert.match(await evaluate('document.querySelector(".test-profile-form [role=status]")?.textContent || ""'), /Founder profile updated/u)
 
-  console.log('PASS: business validation/save/error feedback, upload flows, editable cover/gallery previews, non-claim verification previews, saved-state publishing, founder pronouns/interests preview, linked business, avatar, and busy state.')
+  console.log('PASS: business validation/save/error feedback, upload flows, persisted cover/gallery, non-claim verification previews, saved-state publishing, persisted founder pronouns/interests, linked business, avatar, and busy state.')
 } finally {
   client?.close()
   await Promise.all([stopProcess(browser), stopProcess(vite)])

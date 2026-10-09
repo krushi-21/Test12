@@ -9,6 +9,29 @@ export const httpsUrl = z.preprocess(value => value === '' ? undefined : value,
 const assetUrl = z.preprocess(value => value === '' ? undefined : value, z.string().trim().url().max(2048).refine(value => {
   try { const u = new URL(value); return ['https:', 'http:'].includes(u.protocol) && !u.username && !u.password; } catch { return false; }
 }, 'Use a URL returned by the upload endpoint.').optional());
+const profileImageUrlValue = z.string().trim().min(1).max(2048).refine(value => {
+  if (value.startsWith('/images/')) return /^\/images\/[A-Za-z0-9_-]+\.(?:jpe?g|png|webp|avif)$/i.test(value);
+  try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password; } catch { return false; }
+}, 'Use an HTTPS image URL or a safe /images/ path.');
+const profileImageUrl = z.preprocess(value => value === '' ? undefined : value, z.union([z.null(), profileImageUrlValue]).optional());
+const profileImageUrls = z.preprocess(value => {
+  if (value === '') return [];
+  if (typeof value === 'string') return value.split(/\r?\n/u).map(item => item.trim()).filter(Boolean);
+  if (Array.isArray(value)) return value.map(item => typeof item === 'string' ? item.trim() : item).filter(item => item !== '');
+  return value;
+}, z.array(profileImageUrlValue).max(6).optional()).superRefine((urls, ctx) => {
+  if (!urls) return;
+  if (new Set(urls).size !== urls.length) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Gallery image URLs must be unique.' });
+});
+const interests = z.preprocess(value => {
+  if (typeof value === 'string') return value.split(',').map(item => item.trim()).filter(Boolean);
+  if (Array.isArray(value)) return value.map(item => typeof item === 'string' ? item.trim() : item).filter(item => item !== '');
+  return value;
+}, z.array(requiredText(40)).max(8).superRefine((items, ctx) => {
+  if (items.reduce((total, item) => total + item.length, 0) > 240) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Keep interests within 240 characters.' });
+  }
+}).optional());
 const requiredHttpsUrl = z.string().trim().min(1).url().max(2048).refine(value => {
   try { const u = new URL(value); return u.protocol === 'https:' && !u.username && !u.password; } catch { return false; }
 }, 'Use a valid HTTPS URL without embedded credentials.');
@@ -33,11 +56,13 @@ export const financialSchema = z.object({
 }).partial();
 export const founderProfileSchema = z.object({
   displayName: requiredText(80).optional(), avatarUrl: assetUrl, bio: optionalText(500), city: optionalText(80), state: optionalText(80),
-  role: optionalText(80), instagramUrl: httpsUrl, publicProfile: z.boolean().optional(), publicBrandIds: z.array(z.string().uuid()).max(50).optional(), financial: financialSchema.optional()
+  role: optionalText(80), pronouns: z.union([z.null(), optionalText(40)]).optional(), interests,
+  instagramUrl: httpsUrl, publicProfile: z.boolean().optional(), publicBrandIds: z.array(z.string().uuid()).max(50).optional(), financial: financialSchema.optional()
 });
 
 export const brandFieldsSchema = z.object({
   name: requiredText(100).optional(), logoUrl: assetUrl, description: requiredText(1000).optional(), category: requiredText(80).optional(),
+  coverImageUrl: profileImageUrl, galleryImageUrls: profileImageUrls,
   websiteUrl: httpsUrl, instagramUrl: httpsUrl, whatsappUrl: httpsUrl, tagline: optionalText(160), city: optionalText(80), state: optionalText(80),
   area: optionalText(100), address: optionalText(300), latitude: z.number().min(-90).max(90).nullable().optional(), longitude: z.number().min(-180).max(180).nullable().optional(),
   openingHours, contactPhone: z.string().trim().regex(/^\+?[0-9 ()-]{7,25}$/).optional(),

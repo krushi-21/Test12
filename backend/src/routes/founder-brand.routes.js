@@ -10,7 +10,7 @@ const profileColumns = {
   displayName: 'display_name', avatarUrl: 'avatar_url', bio: 'bio', city: 'city', state: 'state', role: 'role', instagramUrl: 'instagram_url', publicProfile: 'public_profile'
 };
 const brandColumns = {
-  name: 'name', logoUrl: 'logo_url', description: 'description', category: 'category', websiteUrl: 'website_url',
+  name: 'name', logoUrl: 'logo_url', coverImageUrl: 'cover_image_url', galleryImageUrls: 'gallery_image_urls', description: 'description', category: 'category', websiteUrl: 'website_url',
   instagramUrl: 'instagram_url', whatsappUrl: 'whatsapp_url', tagline: 'tagline', city: 'city', state: 'state', foundedYear: 'founded_year',
   area: 'area', address: 'address', latitude: 'latitude', longitude: 'longitude', openingHours: 'opening_hours', contactPhone: 'contact_phone',
   contactEmail: 'contact_email', quoteUrl: 'quote_url', demoUrl: 'demo_url', storeUrl: 'store_url', businessMode: 'business_mode'
@@ -73,12 +73,12 @@ export function createFounderBrandRouter({ db, auth, config }) {
     const avatarId = assertOwnedAsset(db, req.user.id, input.avatarUrl, 'founder-avatar', config, 'avatarUrl');
     const avatarUrl = avatarId ? input.avatarUrl : null;
     const slug = slugify(displayName);
-    db.prepare(`INSERT INTO founder_profiles(id, user_id, slug, display_name, avatar_url, bio, city, state, role, instagram_url,
+    db.prepare(`INSERT INTO founder_profiles(id, user_id, slug, display_name, avatar_url, bio, city, state, role, pronouns, interests_json, instagram_url,
       public_profile, revenue_range, revenue_period, revenue_public, funding_raised_range, funding_date, funding_type,
       funding_public, open_to_funding, open_to_funding_public, financial_disclosed_at, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(id, req.user.id, slug, displayName, avatarUrl, input.bio ?? null, input.city ?? null, input.state ?? null,
-        input.role ?? null, input.instagramUrl ?? null, Number(input.publicProfile ?? false), financial.revenueRange ?? null,
+        input.role ?? null, input.pronouns ?? null, JSON.stringify(input.interests ?? []), input.instagramUrl ?? null, Number(input.publicProfile ?? false), financial.revenueRange ?? null,
         financial.revenuePeriod ?? null, Number(financial.revenuePublic ?? false), financial.fundingRaisedRange ?? null,
         financial.fundingDate ?? null, financial.fundingType ?? null, Number(financial.fundingPublic ?? false),
         financial.openToFunding == null ? null : Number(financial.openToFunding), Number(financial.openToFundingPublic ?? false),
@@ -99,7 +99,7 @@ export function createFounderBrandRouter({ db, auth, config }) {
       openToFundingPublic: Boolean(profile.open_to_funding_public)
     };
     const financial = validateFinancial(financialCurrent, input.financial);
-    const setProfile = db.prepare(`UPDATE founder_profiles SET display_name = ?, avatar_url = ?, bio = ?, city = ?, state = ?, role = ?,
+    const setProfile = db.prepare(`UPDATE founder_profiles SET display_name = ?, avatar_url = ?, bio = ?, city = ?, state = ?, role = ?, pronouns = ?, interests_json = ?,
       instagram_url = ?, public_profile = ?, revenue_range = ?, revenue_period = ?, revenue_public = ?, funding_raised_range = ?,
       funding_date = ?, funding_type = ?, funding_public = ?, open_to_funding = ?, open_to_funding_public = ?,
       financial_disclosed_at = ?, updated_at = ? WHERE id = ?`);
@@ -111,6 +111,8 @@ export function createFounderBrandRouter({ db, auth, config }) {
     setProfile.run(nextDisplayName, avatarUrl,
       has(input, 'bio') ? input.bio ?? null : profile.bio, has(input, 'city') ? input.city ?? null : profile.city,
       has(input, 'state') ? input.state ?? null : profile.state, has(input, 'role') ? input.role ?? null : profile.role,
+      has(input, 'pronouns') ? input.pronouns ?? null : profile.pronouns,
+      has(input, 'interests') ? JSON.stringify(input.interests ?? []) : profile.interests_json,
       has(input, 'instagramUrl') ? input.instagramUrl ?? null : profile.instagram_url,
       Number(has(input, 'publicProfile') ? input.publicProfile : Boolean(profile.public_profile)),
       financial.revenueRange ?? null, financial.revenuePeriod ?? null, Number(Boolean(financial.revenuePublic)),
@@ -133,11 +135,11 @@ export function createFounderBrandRouter({ db, auth, config }) {
     if (input.logoUrl) assertOwnedAsset(db, req.user.id, input.logoUrl, 'brand-logo', config, 'logoUrl');
     const id = randomUUID(), time = now();
     const name = input.name ?? `Draft brand ${id.slice(0, 8)}`;
-    db.prepare(`INSERT INTO brands(id, owner_user_id, slug, name, logo_url, description, category, website_url, instagram_url, whatsapp_url,
+    db.prepare(`INSERT INTO brands(id, owner_user_id, slug, name, logo_url, cover_image_url, gallery_image_urls, description, category, website_url, instagram_url, whatsapp_url,
       tagline, city, state, founded_year, area, address, latitude, longitude, opening_hours, contact_phone, contact_email,
       quote_url, demo_url, store_url, business_mode, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)`)
-      .run(id, req.user.id, slugify(name), name, input.logoUrl ?? null, input.description ?? null, input.category ?? null,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?)`)
+      .run(id, req.user.id, slugify(name), name, input.logoUrl ?? null, input.coverImageUrl ?? null, JSON.stringify(input.galleryImageUrls ?? []), input.description ?? null, input.category ?? null,
         input.websiteUrl ?? null, input.instagramUrl ?? null, input.whatsappUrl ?? null, input.tagline ?? null,
         input.city ?? null, input.state ?? null, input.foundedYear ?? null, input.area ?? null, input.address ?? null,
         input.latitude ?? null, input.longitude ?? null, JSON.stringify(input.openingHours ?? {}), input.contactPhone ?? null, input.contactEmail ?? null,
@@ -151,12 +153,16 @@ export function createFounderBrandRouter({ db, auth, config }) {
     if (input.category) assertCategory(db, input.category);
     if (has(input, 'logoUrl') && input.logoUrl) assertOwnedAsset(db, req.user.id, input.logoUrl, 'brand-logo', config, 'logoUrl');
     const next = { ...brand };
-    for (const [key, column] of Object.entries(brandColumns)) if (has(input, key)) next[column] = key === 'openingHours' ? JSON.stringify(input[key] ?? {}) : sqlVal(input[key]);
+    for (const [key, column] of Object.entries(brandColumns)) if (has(input, key)) {
+      next[column] = key === 'openingHours' ? JSON.stringify(input[key] ?? {})
+        : key === 'galleryImageUrls' ? JSON.stringify(input[key] ?? [])
+          : sqlVal(input[key]);
+    }
     if (brand.status === 'published') requireBrandReady(db, req.user.id, next, config);
-    db.prepare(`UPDATE brands SET name = ?, logo_url = ?, description = ?, category = ?, website_url = ?, instagram_url = ?, whatsapp_url = ?,
+    db.prepare(`UPDATE brands SET name = ?, logo_url = ?, cover_image_url = ?, gallery_image_urls = ?, description = ?, category = ?, website_url = ?, instagram_url = ?, whatsapp_url = ?,
       tagline = ?, city = ?, state = ?, founded_year = ?, area = ?, address = ?, latitude = ?, longitude = ?, opening_hours = ?, contact_phone = ?,
       contact_email = ?, quote_url = ?, demo_url = ?, store_url = ?, business_mode = ?, updated_at = ? WHERE id = ?`)
-      .run(next.name, next.logo_url, next.description, next.category, next.website_url, next.instagram_url, next.whatsapp_url,
+      .run(next.name, next.logo_url, next.cover_image_url, next.gallery_image_urls, next.description, next.category, next.website_url, next.instagram_url, next.whatsapp_url,
         next.tagline, next.city, next.state, next.founded_year, next.area, next.address, next.latitude, next.longitude, next.opening_hours,
         next.contact_phone, next.contact_email, next.quote_url, next.demo_url, next.store_url, next.business_mode, now(), brand.id);
     return res.json({ item: getBrandOwner(db, db.prepare('SELECT * FROM brands WHERE id = ?').get(brand.id)) });

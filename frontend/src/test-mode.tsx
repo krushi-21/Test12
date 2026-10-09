@@ -18,7 +18,7 @@ type ApiLaunch = {
   viewerState?: { liked: boolean; saved: boolean };
 }
 type ApiProduct = { id: string; brandId?: string; name: string; description: string; priceInrPaise?: number; imageUrl?: string; buyUrl: string; createdAt?: string }
-type ApiBrand = { id: string; slug: string; name: string; logoUrl?: string; category: string; description?: string; status?: string; city?: string; state?: string; area?: string; address?: string; latitude?: number; longitude?: number; businessMode?: string; contactPhone?: string; contactEmail?: string; founderEmailVerified?: boolean; viewerIsOwner?: boolean; isSaved?: boolean; saveCount?: number; links?: { website?: string; instagram?: string; whatsapp?: string; phone?: string; email?: string; quote?: string; demo?: string; store?: string }; launches?: ApiLaunch[]; products?: ApiProduct[] }
+type ApiBrand = { id: string; slug: string; name: string; logoUrl?: string; coverImageUrl?: string; galleryImageUrls?: string[]; category: string; description?: string; status?: string; city?: string; state?: string; area?: string; address?: string; latitude?: number; longitude?: number; businessMode?: string; contactPhone?: string; contactEmail?: string; founderEmailVerified?: boolean; viewerIsOwner?: boolean; isSaved?: boolean; saveCount?: number; links?: { website?: string; instagram?: string; whatsapp?: string; phone?: string; email?: string; quote?: string; demo?: string; store?: string }; launches?: ApiLaunch[]; products?: ApiProduct[] }
 type ApiMessage = { to: string; subject: string; createdAt: string; verificationUrl?: string }
 type ApiErrorShape = { error?: { message?: string; fields?: Record<string, string> } }
 
@@ -401,7 +401,9 @@ function BrandPage({ slug }: { slug: string }) {
   if (!brand) return <section className="test-content-width"><Notice>Loading synthetic brand…</Notice></section>
   return <section className="test-content-width test-brand-page">
     <Link to="/test" className="test-back-link">← Back to browse</Link>
+    {brand.coverImageUrl && <div className="test-brand-cover"><img src={brand.coverImageUrl} alt={`${brand.name} cover`} /></div>}
     <div className="test-brand-hero">{brand.logoUrl && <img src={brand.logoUrl} alt="" />}<div><span className="test-eyebrow">Published synthetic brand</span><h1>{brand.name}</h1><p>{brand.description}</p><span>{brand.category}</span><p>{[brand.area, brand.city, brand.state].filter(Boolean).join(', ')}</p></div></div>
+    {brand.galleryImageUrls?.length ? <section className="test-brand-gallery" aria-label={`${brand.name} image gallery`}>{brand.galleryImageUrls.map((imageUrl, index) => <img key={`${imageUrl}-${index}`} src={imageUrl} alt={`${brand.name} gallery image ${index + 1}`} loading="lazy" />)}</section> : null}
     <div className="test-action-row" data-testid="brand-save-control">
       {brand.viewerIsOwner
         ? <span className="test-muted" data-testid="brand-save-owner">You cannot save your own business.</span>
