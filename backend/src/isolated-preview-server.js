@@ -27,7 +27,7 @@ const port = Number(process.env.TEST_PREVIEW_API_PORT ?? 4199);
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('TEST_PREVIEW_API_PORT must be an unprivileged TCP port.');
 
 const temporaryRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'launch-synthetic-test-preview-'));
-const db = openDatabase(':memory:');
+const db = openDatabase(':memory:', { migrate: true });
 const outbox = [];
 let server;
 let stopScheduledWork = () => {};

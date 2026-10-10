@@ -6,6 +6,7 @@ import { addEvent, holdOnClickBurst } from '../lib/events.js';
 import { loadPublicBrand, loadPublicFounder, loadPublicLaunch } from '../lib/serializers.js';
 import { makeLimiter } from '../lib/rate-limit.js';
 import { addBusinessEvent } from '../lib/business-events.js';
+import { getReadinessSnapshot } from '../lib/readiness.js';
 
 const launchTypes = [
   { id: 'business', name: 'Business' }, { id: 'product', name: 'Product' }, { id: 'service', name: 'Service' }
@@ -13,13 +14,16 @@ const launchTypes = [
 const validKinds = new Set(['website', 'instagram', 'whatsapp']);
 const likePattern = value => `%${value.replace(/[\\%_]/g, '\\$&')}%`;
 
-export function createPublicRouter({ db, config, auth }) {
+export function createPublicRouter({ db, config, auth, schedulerStatus }) {
   const router = Router();
+  router.get('/health', (_req, res) => res.set('Cache-Control', 'no-store').json({ status: 'ok' }));
+  router.get('/ready', (_req, res) => {
+    const readiness = getReadinessSnapshot({ db, config, schedulerStatus });
+    return res.set('Cache-Control', 'no-store').status(readiness.status === 'ready' ? 200 : 503).json(readiness);
+  });
   router.use(auth.optionalAuth);
   const engagementLimit = makeLimiter({ windowMs: 60_000, limit: 90, message: 'Too many engagement requests. Please wait a moment.' });
   const redirectLimit = makeLimiter({ windowMs: 60_000, limit: 45, message: 'Too many outbound requests. Please wait a moment.' });
-
-  router.get('/health', (_req, res) => res.json({ status: 'ok' }));
   router.get('/categories', (_req, res) => {
     const categories = db.prepare('SELECT id, name FROM categories WHERE active = 1 ORDER BY sort_order').all().map(row => ({ ...row, slug: row.id }));
     res.json({ categories, launchTypes });

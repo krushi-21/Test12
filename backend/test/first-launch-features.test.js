@@ -11,7 +11,7 @@ import { createApp } from '../src/app.js';
 
 async function context(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'aarambh-first-launch-'));
-  const db = openDatabase(':memory:');
+  const db = openDatabase(':memory:', { migrate: true });
   const messages = [];
   const config = loadConfig({ nodeEnv: 'test', databasePath: ':memory:', uploadDir: path.join(root, 'uploads'), mailDir: path.join(root, 'mail'),
     apiOrigin: 'http://localhost:4000', webOrigin: 'http://localhost:5173', cookieSecure: false, previewReadOnly: false,

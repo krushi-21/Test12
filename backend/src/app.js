@@ -25,7 +25,7 @@ import { createInsightsRouter } from './routes/insights.routes.js';
 import { createRecommendationsRouter } from './routes/recommendations.routes.js';
 
 const previewGetPaths = [
-  /^\/api\/(?:health|categories|launches|leaderboard)\/?$/,
+  /^\/api\/(?:health|ready|categories|launches|leaderboard)\/?$/,
   /^\/api\/categories\/popular\/?$/,
   /^\/api\/businesses\/leaderboard\/?$/,
   /^\/api\/founders\/?$/,
@@ -86,10 +86,12 @@ function previewReadOnlyMiddleware(config) {
   };
 }
 
-export function createApp({ db, config, sendEmail = createEmailSender(config), testPreviewOutbox = [] }) {
+export function createApp({ db, config, sendEmail = createEmailSender(config), testPreviewOutbox = [], schedulerStatus }) {
   config = { ...config, previewReadOnly: config.previewReadOnly !== false };
-  if (!config.previewReadOnly && (config.nodeEnv !== 'test' || config.databasePath !== ':memory:')) {
-    throw new Error('Preview read-only mode can only be disabled for isolated API tests with NODE_ENV=test and DATABASE_PATH=:memory:.');
+  const isolatedWritableTest = config.nodeEnv === 'test' && config.databasePath === ':memory:';
+  const explicitlyWritableProduction = config.nodeEnv === 'production' && config.productionWritesEnabled === true;
+  if (!config.previewReadOnly && !isolatedWritableTest && !explicitlyWritableProduction) {
+    throw new Error('Write mode is limited to isolated API tests with NODE_ENV=test and DATABASE_PATH=:memory:, or explicit production opt-in.');
   }
   if (config.syntheticTestPreview) {
     const backendRoot = config.backendRoot ?? process.cwd();
@@ -140,7 +142,7 @@ export function createApp({ db, config, sendEmail = createEmailSender(config), t
   app.use('/api', createReviewsRouter({ db, auth }));
   app.use('/api', createCommunityRouter({ db, auth, config }));
   app.use('/api', createInsightsRouter({ db, auth, config }));
-  app.use('/api', createPublicRouter({ db, config, auth }));
+  app.use('/api', createPublicRouter({ db, config, auth, schedulerStatus }));
   app.use('/api', createUploadsRouter({ db, config, auth }));
   app.use('/api', createEngagementRouter({ db, config, auth }));
   app.use('/api', createFounderBrandRouter({ db, auth, config }));

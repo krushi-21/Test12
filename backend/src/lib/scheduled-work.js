@@ -74,18 +74,28 @@ export function processScheduledWork(db, currentTime = new Date()) {
   return { publishedCount, ...notifications };
 }
 
-export function startScheduledWork(db, { intervalMs = 15_000 } = {}) {
+export function startScheduledWork(db, { intervalMs = 15_000, work = () => processScheduledWork(db) } = {}) {
   let stopped = false;
+  let lastSuccessAt = null;
+  let lastErrorAt = null;
   const run = () => {
     if (stopped || !db.open) return;
     try {
-      processScheduledWork(db);
+      work();
+      lastSuccessAt = new Date().toISOString();
+      lastErrorAt = null;
     } catch (error) {
+      lastErrorAt = new Date().toISOString();
       console.error('scheduled_work_failed', { name: error?.name ?? 'Error', code: error?.code ?? 'unknown' });
     }
   };
   run();
   const timer = setInterval(run, intervalMs);
   timer.unref();
-  return () => { stopped = true; clearInterval(timer); };
+  const stop = () => { stopped = true; clearInterval(timer); };
+  stop.getStatus = () => {
+    const recentSuccess = lastSuccessAt && Date.now() - Date.parse(lastSuccessAt) <= Math.max(intervalMs * 2, 30_000);
+    return { enabled: !stopped && db.open, healthy: Boolean(!stopped && recentSuccess && !lastErrorAt), lastSuccessAt };
+  };
+  return stop;
 }

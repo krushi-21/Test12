@@ -14,7 +14,7 @@ import { processScheduledWork } from '../src/lib/scheduled-work.js';
 
 async function context(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'aarambh-feature-completeness-'));
-  const db = openDatabase(':memory:');
+  const db = openDatabase(':memory:', { migrate: true });
   const messages = [];
   const config = loadConfig({
     nodeEnv: 'test', databasePath: ':memory:', uploadDir: path.join(root, 'uploads'), mailDir: path.join(root, 'mail'),

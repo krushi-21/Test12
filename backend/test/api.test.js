@@ -12,7 +12,7 @@ import { createEmailSender } from '../src/lib/email.js';
 
 async function makeContext(t, extraConfig = {}) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'launch-api-'));
-  const db = openDatabase(':memory:');
+  const db = openDatabase(':memory:', { migrate: true });
   const messages = [];
   const config = loadConfig({
     nodeEnv: 'test', databasePath: ':memory:', uploadDir: path.join(root, 'uploads'), mailDir: path.join(root, 'mail'),
@@ -411,7 +411,8 @@ test('production configuration requires HTTPS origins, distinct secrets, and SMT
   const valid = {
     nodeEnv: 'production', sessionSecret: 'session-secret-for-production-0123456789',
     analyticsSalt: 'analytics-salt-for-production-9876543210', smtpHost: 'smtp.example.com',
-    webOrigin: 'https://web.example.com', apiOrigin: 'https://api.example.com'
+    webOrigin: 'https://web.example.com', apiOrigin: 'https://api.example.com',
+    databasePath: '/srv/aarambh/data/app.sqlite', uploadDir: '/srv/aarambh/uploads'
   };
   assert.equal(loadConfig(valid).webOrigin, 'https://web.example.com');
   assert.throws(() => loadConfig({ ...valid, webOrigin: 'http://web.example.com' }), /HTTPS in production/);

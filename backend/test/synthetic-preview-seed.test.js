@@ -12,7 +12,7 @@ import { seedSyntheticTestDatabase, SYNTHETIC_TEST_ACCOUNTS } from '../src/synth
 test('each fresh synthetic preview seeds fictional discovery shelves in memory only', async t => {
   for (let restart = 0; restart < 2; restart += 1) {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'synthetic-preview-seed-regression-'));
-    const db = openDatabase(':memory:');
+    const db = openDatabase(':memory:', { migrate: true });
     t.after(async () => { if (db.open) db.close(); await fs.rm(root, { recursive: true, force: true }); });
     const uploadDir = path.join(root, 'uploads');
     const seed = await seedSyntheticTestDatabase(db, { uploadDir, webOrigin: 'http://localhost:5173' });
@@ -27,11 +27,28 @@ test('each fresh synthetic preview seeds fictional discovery shelves in memory o
     assert.equal(seed.seededBusinessCount, 10);
     assert.equal(seed.seededLaunchCount, 17);
     assert.notEqual(seed.miraFounderProfileId, seed.profileId);
-    const rheaLogin = await request(app).post('/api/auth/login').send({
+    const rhea = request.agent(app);
+    const rheaLogin = await rhea.post('/api/auth/login').send({
       email: SYNTHETIC_TEST_ACCOUNTS.founder.email,
       password: SYNTHETIC_TEST_ACCOUNTS.founder.password
     });
     assert.equal(rheaLogin.status, 200, JSON.stringify(rheaLogin.body));
+    assert.equal((await rhea.get('/api/admin/reports?status=open')).status, 403,
+      'a verified founder account must not access moderator routes');
+    const moderator = request.agent(app);
+    const moderatorLogin = await moderator.post('/api/auth/login').send({
+      email: SYNTHETIC_TEST_ACCOUNTS.moderator.email,
+      password: SYNTHETIC_TEST_ACCOUNTS.moderator.password
+    });
+    assert.equal(moderatorLogin.status, 200, JSON.stringify(moderatorLogin.body));
+    assert.equal(moderatorLogin.body.user.emailVerified, true);
+    assert.equal(db.prepare('SELECT role FROM users WHERE id = ?').get(seed.moderatorId).role, 'moderator');
+    const moderationQueue = await moderator.get('/api/admin/reports?status=open');
+    assert.equal(moderationQueue.status, 200, JSON.stringify(moderationQueue.body));
+    assert.equal(moderationQueue.body.items.length, 1);
+    assert.equal(moderationQueue.body.items[0].id, seed.moderationReportId);
+    assert.equal(moderationQueue.body.items[0].subjectPreview.slug, 'sample-release-notes');
+    assert.equal(moderationQueue.body.items[0].reporterUserId, undefined);
     const rheaSearch = await request(app).get('/api/founders?query=Rhea%20Sample');
     assert.equal(rheaSearch.status, 200, JSON.stringify(rheaSearch.body));
     assert.ok(rheaSearch.body.items.some(item => item.id === seed.profileId && item.slug === 'rhea-sample-test-founder'));
@@ -122,5 +139,12 @@ test('each fresh synthetic preview seeds fictional discovery shelves in memory o
     assert.equal(sharedMiraCollection.body.item.id, seed.miraCollectionId);
     assert.equal(sharedMiraCollection.body.item.launchCount, 3);
     assert.deepEqual(sharedMiraCollection.body.item.launches.map(launch => launch.slug), miraLaunchSlugs);
+    const action = await moderator.post(`/api/admin/reports/${seed.moderationReportId}/actions`).send({
+      action: 'pause', reason: 'Synthetic preview action-flow verification.'
+    });
+    assert.equal(action.status, 200, JSON.stringify(action.body));
+    assert.equal(action.body.subjectStatus, 'paused');
+    assert.equal(action.body.report.status, 'actioned');
+    assert.equal(action.body.report.moderationHistory[0].action, 'pause');
   }
 });
