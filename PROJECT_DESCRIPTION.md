@@ -1,6 +1,13 @@
-# Aarambh — Project Description and First-Launch Implementation
+# Naviraa — Project Description and First-Launch Implementation
 
-Aarambh is an India-wide launch and discovery community for small businesses. Founders can introduce a new product, service, or business; visitors can discover launches, businesses, and the people behind them. **Aarambh is not an ecommerce marketplace:** product cards link directly to a business’s own HTTPS destination, but Aarambh does not provide carts, checkout, orders, or payments.
+Naviraa is an India-wide launch and discovery community for small businesses. Founders can introduce a new product, service, or business; visitors can discover launches, businesses, and the people behind them. **Naviraa is not an ecommerce marketplace:** product cards link directly to a business’s own HTTPS destination, but Naviraa does not provide carts, checkout, orders, or payments.
+
+## Brand identity
+
+- **Tagline:** Discover what India is building.
+- **Palette:** terracotta `#B96F54`, sand `#E9D9C6`, ivory `#F8F4EE`, olive `#5B6B53`, charcoal `#2D2723`.
+- **Typography:** Playfair Display for editorial/display headings; Inter for interface and body text.
+- **Mark:** an arch paired with a star.
 
 ## First-launch features implemented
 
@@ -10,7 +17,7 @@ The backend and interactive synthetic `/test` app now cover the requested first-
 
 The app supports registration, email verification, sign-in/sign-out, password reset, founder profiles, multiple businesses per founder, and launch drafts with image uploads, publishing, editing, pausing, and archiving. Owners can edit business contact details, public address, owner-supplied coordinates, online/physical/hybrid mode, and seven-day opening hours. Email verification and password-reset messages in the synthetic preview are stored in a local in-memory outbox; SMTP is disabled there.
 
-Businesses have owner-scoped create, list, edit, and delete APIs for up to 12 database-backed catalog items. Items support optional INR pricing, uploaded images, validated HTTPS destinations, and public product cards. Analytics include product-level click reporting. The product links send visitors to the business site; Aarambh does not process the resulting transaction.
+Businesses have owner-scoped create, list, edit, and delete APIs for up to 12 database-backed catalog items. Items support optional INR pricing, uploaded images, validated HTTPS destinations, and public product cards. Analytics include product-level click reporting. The product links send visitors to the business site; Naviraa does not process the resulting transaction.
 
 ### Community, launch lifecycle, and notifications
 
@@ -20,9 +27,9 @@ Launches support scheduled start and optional end times, countdowns, Coming Soon
 
 ### Discovery, search, and contact
 
-India-wide business discovery supports city and area, category, online/physical/hybrid mode, optional price range, newly launched, open-now and email-verified-account filters, and nearby, new, trending, rising, most-saved and most-liked sorts. A map view uses business coordinates or a selected city centre. The app does not geocode addresses or request a visitor’s device location. “Verified” means the managing account verified its email; it is not an Aarambh business-verification badge.
+India-wide business discovery supports city and area, category, online/physical/hybrid mode, optional price range, newly launched, open-now and email-verified-account filters, and nearby, new, trending, rising, most-saved and most-liked sorts. A map view uses business coordinates or a selected city centre. The app does not geocode addresses or request a visitor’s device location. “Verified” means the managing account verified its email; it is not a Naviraa business-verification badge.
 
-Business profiles provide direct website, WhatsApp, phone, email, directions, quote, demo, and store actions. All lead-generation actions direct visitors to the business rather than accepting payment on Aarambh.
+Business profiles provide direct website, WhatsApp, phone, email, directions, quote, demo, and store actions. All lead-generation actions direct visitors to the business rather than accepting payment on Naviraa.
 
 ### Reviews, moderation, and analytics
 

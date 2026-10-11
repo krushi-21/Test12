@@ -1,4 +1,4 @@
-# Aarambh single-node production runbook (prepared, not deployed)
+# Naviraa single-node production runbook (prepared, not deployed)
 
 This is an operational preparation for the current SQLite MVP, not a deployment record. No host was selected or contacted; no persistent database was opened or migrated; production writes were not enabled. The frontend root route `/` remains the existing read-only demo.
 
@@ -9,8 +9,8 @@ Run exactly **one Node.js process on one host/instance**. The scheduled-publicat
 Mount durable storage outside the versioned application/release directory, for example:
 
 ```text
-/srv/aarambh/data/aarambh.sqlite   # SQLite database; keep its -wal and -shm files alongside it
-/srv/aarambh/uploads/              # uploaded media referenced by SQLite rows
+/srv/naviraa/data/naviraa.sqlite   # SQLite database; keep its -wal and -shm files alongside it
+/srv/naviraa/uploads/              # uploaded media referenced by SQLite rows
 ```
 
 Use separate, non-overlapping absolute `DATABASE_PATH` and `UPLOAD_DIR` values. Create the mount points and upload directory as the service account with owner-only permissions before starting the process. The production server now refuses to start unless the configured database file and upload directory already exist; it will not silently initialize a local substitute when a volume is missing. The application will not create deployment directories for you. Preserve SQLite WAL sidecar files on the same volume while the process is running; never copy just the main `.sqlite` file from a live WAL database.
@@ -30,12 +30,12 @@ Opening the SQLite database no longer applies migrations. The backend exposes `n
 For a new or existing production volume, first arrange the required backup/restore target, stop the API if it is already running, then run a status check and review the pending list. Production examples (replace the path with the exact mounted location):
 
 ```bash
-NODE_ENV=production DATABASE_PATH=/srv/aarambh/data/aarambh.sqlite \
+NODE_ENV=production DATABASE_PATH=/srv/naviraa/data/naviraa.sqlite \
   npm run migrate -- --check
 
 # Only after the reviewed backup and explicit release decision:
-NODE_ENV=production DATABASE_PATH=/srv/aarambh/data/aarambh.sqlite \
-  npm run migrate -- --apply --confirm-database /srv/aarambh/data/aarambh.sqlite --confirm-backup
+NODE_ENV=production DATABASE_PATH=/srv/naviraa/data/naviraa.sqlite \
+  npm run migrate -- --apply --confirm-database /srv/naviraa/data/naviraa.sqlite --confirm-backup
 ```
 
 `--check` exits non-zero when the schema is behind. `--apply` refuses production unless the confirmation argument resolves to the exact configured database path and the operator attests that the paired database-and-uploads backup is complete. Do not run either command against a path until the owner has selected and verified the actual volume. Migration `009_profile_media_details.sql` is present in source; it was not applied to the existing persistent database during this preparation. Determine the live schema with `--check` before planning a release.
@@ -66,7 +66,7 @@ For rollback before any schema migration, return to the prior immutable release 
 
 ## Blockers and decisions still required
 
-- **Hosting and domain:** select the single-node provider/region, durable-volume type/mount paths, HTTPS termination, reverse-proxy topology, domain, DNS, and deployment owner.
+- **Hosting and domain:** `Naviraa.in` has been purchased. Select the single-node provider/region, durable-volume type/mount paths, HTTPS termination, reverse-proxy topology, configure DNS in a separately approved release step, and assign a deployment owner. No DNS or deployment change has been made.
 - **Email (not worked on):** `NODE_ENV=production` currently refuses startup without `SMTP_HOST`. Signup, email verification/resend, password reset, and email-based moderation/appeal notifications depend on functioning production SMTP. Email setup and delivery validation are a **deployment blocker**; this work intentionally left email code/config requirements untouched and did not enable a mail service.
 - **Backup target and policy:** choose independent storage, encryption/permissions, cadence, retention, monitoring, and recovery objectives; run a full database+uploads restore rehearsal before launch.
 - **Privacy/moderation policy:** approve privacy notice/retention, report handling, escalation/on-call ownership, and a concrete response-time target for safety reports/takedowns. The code does not decide these policies.

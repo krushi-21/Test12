@@ -1,4 +1,6 @@
-# Aarambh production-readiness preparation report
+# Naviraa production-readiness preparation report
+
+> **Historical snapshot:** This preparation report was originally written under the Aarambh name. The product is now Naviraa and `Naviraa.in` has since been purchased; the recorded readiness findings below remain a snapshot of the earlier preparation. DNS, deployment, and persistent data have not been changed.
 
 **Status: prepared for review; not deployed.** This work implements configuration, startup, migration, health/readiness, scheduler-status, and operational-documentation safeguards for the selected single-node Node + SQLite + persistent-disk shape. It preserves the existing product surface and static read-only `/` demo.
 
