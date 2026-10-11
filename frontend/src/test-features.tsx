@@ -117,7 +117,7 @@ function businessMapLocations(items: Business[]): BusinessMapLocation[] {
   }))
 }
 const discoveryBusinessImageFixtures: Record<string, string> = {
-  'arts-crafts': '/images/aarambh-home-hero.jpg',
+  'arts-crafts': '/images/naviraa-home-hero.jpg',
   'food-beverage': '/images/launch-home.jpg',
   'fashion-accessories': '/images/launch-textile.jpg',
   'home-living': '/images/launch-saffron.jpg',
@@ -408,7 +408,7 @@ export function ForYouPage() {
 function collectionShareToken(item: Collection) {
   let sharePath = ''
   if (item.shareUrl) {
-    try { sharePath = new URL(item.shareUrl, 'https://aarambh.invalid').pathname }
+    try { sharePath = new URL(item.shareUrl, 'https://naviraa.invalid').pathname }
     catch { sharePath = '' }
   }
   const shareToken = item.isPublic ? sharePath.match(/^\/test\/collection\/([^/]+)\/?$/u)?.[1] : undefined
@@ -584,11 +584,11 @@ export function UpcomingPage() {
         {activeItems.length ? activeItems.map(item => {
           const rawDate = tab === 'upcoming' ? item.launchAt : item.anniversaryDate
           const dateLabel = tab === 'upcoming' ? (rawDate ? formatLaunchTime(rawDate) : formatIndiaDay(activeDate)) : `Launch anniversary · ${formatIndiaDay(activeDate, { day: 'numeric', month: 'short' })}`
-          return <article className="test-workspace-card test-calendar-card test-agenda-card" key={item.id} data-testid="calendar-event-card"><div className="test-agenda-date"><strong>{formatIndiaDay(activeDate, { day: 'numeric' })}</strong><span>{formatIndiaDay(activeDate, { month: 'short' })}</span></div><div className="test-agenda-copy"><span>{tab === 'upcoming' ? 'Coming soon' : 'Anniversary'}</span><h3><Link to={`/test/launch/${item.slug}`}>{item.title}</Link></h3><p>{item.summary || item.story || 'A launch from the Aarambh community.'}</p><div className="test-agenda-meta"><time dateTime={rawDate || activeDate}>{dateLabel}</time>{item.countdownSeconds != null && <strong>{Math.floor(item.countdownSeconds / 86400)} days remaining</strong>}{item.brand?.name && <span>{item.brand.name}</span>}</div></div></article>
+          return <article className="test-workspace-card test-calendar-card test-agenda-card" key={item.id} data-testid="calendar-event-card"><div className="test-agenda-date"><strong>{formatIndiaDay(activeDate, { day: 'numeric' })}</strong><span>{formatIndiaDay(activeDate, { month: 'short' })}</span></div><div className="test-agenda-copy"><span>{tab === 'upcoming' ? 'Coming soon' : 'Anniversary'}</span><h3><Link to={`/test/launch/${item.slug}`}>{item.title}</Link></h3><p>{item.summary || item.story || 'A launch from the Naviraa community.'}</p><div className="test-agenda-meta"><time dateTime={rawDate || activeDate}>{dateLabel}</time>{item.countdownSeconds != null && <strong>{Math.floor(item.countdownSeconds / 86400)} days remaining</strong>}{item.brand?.name && <span>{item.brand.name}</span>}</div></div></article>
         }) : <div className="test-agenda-empty"><strong>No events on this date</strong><span>{tab === 'upcoming' ? 'Choose a marked day to see its scheduled launches.' : 'The anniversary endpoint returns today’s celebrations only.'}</span></div>}
       </section>
     </div>
-    {undatedItems.length > 0 && <section className="test-undated-list"><h2>Other launches in this response</h2>{undatedItems.map(item => <article className="test-calendar-card" key={item.id}><Link to={`/test/launch/${item.slug}`}>{item.title}</Link><span>{item.brand?.name || 'Aarambh business'}</span><p>{item.summary || item.story || 'Launch details'}</p></article>)}</section>}
+    {undatedItems.length > 0 && <section className="test-undated-list"><h2>Other launches in this response</h2>{undatedItems.map(item => <article className="test-calendar-card" key={item.id}><Link to={`/test/launch/${item.slug}`}>{item.title}</Link><span>{item.brand?.name || 'Naviraa business'}</span><p>{item.summary || item.story || 'Launch details'}</p></article>)}</section>}
   </section>
 }
 
@@ -754,7 +754,7 @@ export function FounderDashboardPage({ user }: { user: User | null }) {
     <div className="test-founder-controls"><div><Button primary={range === '7d'} disabled={group !== 'day'} onClick={() => setRange('7d')}>7 days</Button><Button primary={range === '30d'} disabled={group !== 'day'} onClick={() => setRange('30d')}>30 days</Button></div><div><span className="test-muted">Asia/Kolkata · synthetic preview activity</span>{error && <Notice error>{error}</Notice>}</div></div>
     <div className="test-metric-grid test-founder-metrics">{cards.map(([label, value]) => <article className="test-metric-card" key={label}><span>{label}</span><strong>{value ?? 0}</strong></article>)}</div>
     <section className="test-founder-performance"><div className="test-section-heading"><div><span className="test-eyebrow">ACTIVITY OVER TIME</span><h2>Business performance</h2></div><div className="test-action-row">{(['day', 'week', 'month'] as const).map(option => <Button key={option} primary={group === option} onClick={() => setGroup(option)}>{option === 'day' ? 'Daily' : option === 'week' ? 'Weekly' : 'Monthly'}</Button>)}</div></div><div className="test-chart" role="img" aria-label={`Views chart grouped by ${group}`}>{chart.map(point => <div className="test-chart-column" key={point.label} title={`${point.label}: ${point.views} views`}><div className="test-chart-bar" style={{ height: `${Math.max(point.views ? 5 : 1, point.views / max * 100)}%` }} /><span>{point.label.slice(5)}</span></div>)}</div><p>Views = profile visits + launch-detail views. Feed impressions are separate; contact actions and saves/likes remain separate totals.</p></section>
-    <div className="test-dashboard-grid"><section className="test-workspace-card"><h2>Your launches</h2>{data?.launches.length ? <ul className="test-analytics-list">{data.launches.map(item => <li key={item.id}><Link to={`/test/launch/${item.slug}`}>{item.title}</Link><strong>{item.views} views</strong></li>)}</ul> : <p className="test-muted">No launch-view events yet.</p>}{data?.bestLaunch && <p>Best-performing launch: <strong>{data.bestLaunch.title}</strong></p>}</section><section className="test-workspace-card"><h2>Traffic sources</h2>{data?.sources.length ? <ul className="test-analytics-list">{data.sources.map(item => <li key={item.source}><span>{item.source}</span><strong>{item.count}</strong></li>)}</ul> : <p className="test-muted">Traffic-source data will appear as synthetic preview visits occur.</p>}<p>Website click-through rate from Aarambh: <strong>{data?.websiteConversion ?? 0}%</strong></p><p className="test-muted">Website click-through rate is website clicks divided by profile visits plus launch-detail views. Sales are not tracked.</p></section></div>
+    <div className="test-dashboard-grid"><section className="test-workspace-card"><h2>Your launches</h2>{data?.launches.length ? <ul className="test-analytics-list">{data.launches.map(item => <li key={item.id}><Link to={`/test/launch/${item.slug}`}>{item.title}</Link><strong>{item.views} views</strong></li>)}</ul> : <p className="test-muted">No launch-view events yet.</p>}{data?.bestLaunch && <p>Best-performing launch: <strong>{data.bestLaunch.title}</strong></p>}</section><section className="test-workspace-card"><h2>Traffic sources</h2>{data?.sources.length ? <ul className="test-analytics-list">{data.sources.map(item => <li key={item.source}><span>{item.source}</span><strong>{item.count}</strong></li>)}</ul> : <p className="test-muted">Traffic-source data will appear as synthetic preview visits occur.</p>}<p>Website click-through rate from Naviraa: <strong>{data?.websiteConversion ?? 0}%</strong></p><p className="test-muted">Website click-through rate is website clicks divided by profile visits plus launch-detail views. Sales are not tracked.</p></section></div>
     <section className="test-workspace-card"><div className="test-section-heading"><h2>Business actions</h2><span>Private aggregate counts</span></div><div className="test-metric-grid test-metric-grid-small">{[['Call clicks', totals.calls], ['Email clicks', totals.emails], ['Directions', totals.directions], ['Quote requests', totals.quoteRequests], ['Demo bookings', totals.demoBookings], ['Store visits', totals.storeVisits], ['Product clicks', totals.productClicks]].map(([label, value]) => <article className="test-metric-card" key={String(label)}><span>{label}</span><strong>{value ?? 0}</strong></article>)}</div>{data?.bestProduct && <p>Best-performing product: <strong>{data.bestProduct.name}</strong> · {data.bestProduct.clicks} clicks</p>}</section>
   </section>
 }
@@ -916,8 +916,8 @@ export function BusinessProfileEditorPage({ user }: { user: User | null }) {
       <h2>{form.name || 'Your business name'}</h2>
       <div className={`test-business-verification-panel ${verifiedBusiness ? 'is-verified' : 'is-preview'}`} aria-label={verifiedBusiness ? 'Verified business badge' : 'Verified business badge design preview'}>
         <span className="test-verification-mark" aria-hidden="true">✓</span>
-        <div><strong>Verified business</strong><span>{verifiedBusiness ? 'Verified by Aarambh' : 'Badge design preview'}</span></div>
-        {!verifiedBusiness && <p>Illustrative only. Aarambh reviews verification; this editor cannot award a badge.</p>}
+        <div><strong>Verified business</strong><span>{verifiedBusiness ? 'Verified by Naviraa' : 'Badge design preview'}</span></div>
+        {!verifiedBusiness && <p>Illustrative only. Naviraa reviews verification; this editor cannot award a badge.</p>}
       </div>
       <p className="test-business-live-tagline">{form.tagline || 'Your short introduction will appear here.'}</p>
       <p>{form.description || 'Add a description to introduce your business and what makes it distinct.'}</p>
@@ -1052,8 +1052,8 @@ export function FounderProfileEditorPage({ user }: { user: User | null }) {
       <div><h2>{fields.displayName || 'Your name'}</h2><p>{[fields.role || 'Founder', fields.pronouns].filter(Boolean).join(' · ')}</p></div></div>
     <div className={`test-founder-verification-panel ${verifiedFounder ? 'is-verified' : 'is-preview'}`} aria-label={verifiedFounder ? 'Verified founder badge' : 'Verified founder badge design preview'}>
       <span className="test-verification-mark" aria-hidden="true">✓</span>
-      <div><strong>Verified founder</strong><span>{verifiedFounder ? 'Verified by Aarambh' : 'Badge design preview'}</span></div>
-      {!verifiedFounder && <p>Illustrative only. Aarambh reviews verification; this editor cannot award a badge.</p>}
+      <div><strong>Verified founder</strong><span>{verifiedFounder ? 'Verified by Naviraa' : 'Badge design preview'}</span></div>
+      {!verifiedFounder && <p>Illustrative only. Naviraa reviews verification; this editor cannot award a badge.</p>}
     </div>
     <p className="test-founder-live-bio">{fields.bio || 'Your founder story will appear here.'}</p>
     {fields.interests.split(',').map(item => item.trim()).filter(Boolean).length > 0 && <div className="test-founder-live-interests" aria-label="Founder interests">{fields.interests.split(',').map(item => item.trim()).filter(Boolean).slice(0, 8).map(interest => <span key={interest}>{interest}</span>)}</div>}

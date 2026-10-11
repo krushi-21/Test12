@@ -194,7 +194,7 @@ export function LaunchLifecyclePage() {
             return <button type="button" role="gridcell" aria-label={`${monthLabelText} ${day}${events.length ? `, ${events.length} upcoming ${events.length === 1 ? 'launch' : 'launches'}` : ''}`} aria-selected={selectedDay === day} className={`growth-calendar-cell${selectedDay === day ? ' is-selected' : ''}${events.length ? ' has-event' : ''}`} key={day} onClick={() => setSelectedDay(day)}><span>{day}</span>{events.length > 0 && <i aria-hidden="true" />}</button>
           })}
         </div>
-        <p className="growth-local-note"><Bell size={14} aria-hidden="true" /> Reminders are sent through your Aarambh notification centre.</p>
+        <p className="growth-local-note"><Bell size={14} aria-hidden="true" /> Reminders are sent through your Naviraa notification centre.</p>
       </div>
       <aside className="growth-agenda" aria-label="Selected date agenda">
         <div className="growth-agenda-heading"><span>SELECTED DATE</span><h2>{shortDate(selectedDate)}</h2></div>

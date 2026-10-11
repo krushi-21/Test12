@@ -1,9 +1,9 @@
-# Aarambh Launch Platform — Frontend
+# Naviraa Launch Platform — Frontend
 
 React + TypeScript frontend with two intentionally separate local modes:
 
 - **Static preview (`/`)**: bundled synthetic fixtures, local search/filtering, and read-only detail/profile/leaderboard pages. This remains the default and makes no API requests.
-- **Interactive test preview (`/test`)**: API-backed Aarambh discovery homepage for businesses, launches, and founders, with direct founder search, popular categories, public-collection Local Guides, and the monthly business leaderboard. Its business-discovery page supports city/area, category, price, launch recency, engagement sort, verified-account, business-mode, radius, and open-now filters. It also retains the existing account/session, founder workspace, authoring, engagement, and detail flows. It is available through the backend's explicit opt-in runner; anyone with its test link can browse and modify shared synthetic data. App-level sign-in, verified-user requirements, and owner checks remain in force. A same-origin proxy keeps the API key server-side and protects state-changing requests. All records and messages are synthetic and disposable.
+- **Interactive test preview (`/test`)**: API-backed Naviraa discovery homepage for businesses, launches, and founders, with direct founder search, popular categories, public-collection Local Guides, and the monthly business leaderboard. Its business-discovery page supports city/area, category, price, launch recency, engagement sort, verified-account, business-mode, radius, and open-now filters. It also retains the existing account/session, founder workspace, authoring, engagement, and detail flows. It is available through the backend's explicit opt-in runner; anyone with its test link can browse and modify shared synthetic data. App-level sign-in, verified-user requirements, and owner checks remain in force. A same-origin proxy keeps the API key server-side and protects state-changing requests. All records and messages are synthetic and disposable.
 
 Never enter real personal information into either mode.
 

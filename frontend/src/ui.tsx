@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
-import { ArrowRight, BookOpen, Compass, Sprout, Trophy } from 'lucide-react'
+import { ArrowRight, BookOpen, Compass, Trophy } from 'lucide-react'
 import type { LaunchCardData } from './types'
 
+export function NaviraaMark({ className }: { className?: string }) {
+  return <svg className={className} viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
+    <path fill="currentColor" fillRule="evenodd" d="M5 43V23a19 19 0 1 1 38 0v20H5Zm9 0h8V23a3 3 0 1 1 6 0v20h8V23a11 11 0 1 0-22 0v20Z" />
+    <path fill="currentColor" d="M35 1c1.25 5.1 2.9 6.75 8 8-5.1 1.25-6.75 2.9-8 8-1.25-5.1-2.9-6.75-8-8 5.1-1.25 6.75-2.9 8-8Z" />
+  </svg>
+}
+
 export function BrandWordmark() {
-  return <Link to="/" className="wordmark" aria-label="Aarambh home"><span className="wordmark-icon"><Sprout size={18} strokeWidth={2.4} /></span><span>aarambh</span></Link>
+  return <Link to="/" className="wordmark" aria-label="Naviraa home"><NaviraaMark className="wordmark-mark" /><span>naviraa</span></Link>
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -15,12 +22,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       <nav className="top-links" aria-label="Public navigation">
         <NavLink to="/" end><Compass size={15} />Explore</NavLink>
         <NavLink to="/leaderboard"><Trophy size={15} />Leaderboard</NavLink>
-        <NavLink to="/how-it-works" aria-label="How Aarambh works"><BookOpen size={15} /><span className="desktop-nav-label">How it works</span><span className="mobile-nav-label">About</span></NavLink>
+        <NavLink to="/how-it-works" aria-label="How Naviraa works"><BookOpen size={15} /><span className="desktop-nav-label">How it works</span><span className="mobile-nav-label">About</span></NavLink>
       </nav>
       <span className="founder-tools-note" aria-disabled="true">Founder tools coming soon</span>
     </div></header>
     <main id="main-content" className="main-content">{children}</main>
-    <footer className="site-footer"><span>Aarambh synthetic preview</span><span>Local fixtures · read-only · non-production</span></footer>
+    <footer className="site-footer"><span>Naviraa synthetic preview</span><span>Local fixtures · read-only · non-production</span></footer>
   </div>
 }
 

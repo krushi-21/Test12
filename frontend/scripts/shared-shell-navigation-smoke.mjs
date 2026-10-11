@@ -54,7 +54,7 @@ class CdpClient {
 }
 
 const debugPort = await freePort()
-const profile = await mkdtemp(path.join(os.tmpdir(), 'aarambh-shell-nav-'))
+const profile = await mkdtemp(path.join(os.tmpdir(), 'naviraa-shell-nav-'))
 const browser = spawn(chromium, [
   '--headless', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking',
   '--no-first-run', '--no-default-browser-check', '--disable-extensions',

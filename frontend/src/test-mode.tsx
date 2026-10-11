@@ -4,7 +4,8 @@ import { ArrowUpRight, Bell, Bookmark, CalendarDays, Compass, Home, MapPin, Sear
 import './test-mode.css'
 import './discovery-visual.css'
 import { AddToCollection, BusinessDiscoveryPage, BusinessProfileEditorPage, CollectionSharePage, CollectionsPage, ContactActions, FollowBusiness, FollowTarget, ForYouPage, FounderDashboardPage, FounderProfileEditorPage, FollowingPage, LifecyclePanel, NotificationsPage, ReviewsSection, TrendingPage, UpcomingPage } from './test-features'
-import { AarambhHomepage, SyntheticFounderPage } from './test-homepage'
+import { NaviraaHomepage, SyntheticFounderPage } from './test-homepage'
+import { NaviraaMark } from './ui'
 import { CommunityProfilePage } from './pages-community'
 import { GrowthAnalyticsPage, GrowthNotificationsPage, GrowthTrendingPage, LaunchLifecyclePage } from './pages-growth'
 
@@ -127,7 +128,7 @@ function activeMobileTabForPath(pathname: string): MobileTabKey | undefined {
 }
 
 function sidebarLinkMatchesLocation(item: ShellLinkItem, location: { pathname: string; search: string; hash: string }) {
-  const target = new URL(item.to, 'https://aarambh.invalid')
+  const target = new URL(item.to, 'https://naviraa.invalid')
   const targetPath = normalizeShellPath(target.pathname)
   const currentPath = normalizeShellPath(location.pathname)
   if (targetPath !== currentPath) return false
@@ -195,10 +196,10 @@ function TestShell({ children }: { children: ReactNode }) {
   return <div className="site test-site">
     <aside className="test-mode-banner"><strong>Interactive test mode · isolated and disposable</strong><span>Fictional records only. Never enter real personal information.</span></aside>
     <div className="test-shell-frame">
-      <aside className="test-sidebar" aria-label="Aarambh app navigation">
+      <aside className="test-sidebar" aria-label="Naviraa app navigation">
         <div className="test-sidebar-header">
-          <Link className="test-wordmark" to="/test" aria-label="Aarambh home">aarambh<span>.</span></Link>
-          <p className="test-sidebar-tagline">Discover India’s next good thing.</p>
+          <Link className="test-wordmark" to="/test" aria-label="Naviraa home"><NaviraaMark className="test-wordmark-mark" /><span>naviraa</span></Link>
+          <p className="test-sidebar-tagline">Discover what India is building.</p>
         </div>
         <details ref={sidebarMenuRef} className="test-sidebar-menu">
           <summary><span>Menu</span><ArrowUpRight size={16} aria-hidden="true" /></summary>
@@ -573,15 +574,15 @@ function AccountPage() {
       <aside className="test-account-story">
         <div className="test-account-story-copy">
           <span className="test-eyebrow">A COMMUNITY FOR MAKERS AND SUPPORTERS</span>
-          <h1>{mode === 'register' ? 'Join the Aarambh community' : 'Welcome back'}</h1>
+          <h1>{mode === 'register' ? 'Join the Naviraa community' : 'Welcome back'}</h1>
           <p>{mode === 'register' ? 'Meet the people behind thoughtful Indian brands, share what you are building, and find your next source of inspiration.' : 'Sign in to find independent makers, follow the stories you love, and keep up with what is taking shape around you.'}</p>
           <div className="test-account-story-points"><div><strong>Discover</strong><span>Ideas rooted in craft and community.</span></div><div><strong>Connect</strong><span>Meet the makers shaping what comes next.</span></div></div>
         </div>
-        <div className="test-account-art"><img src="/images/aarambh-home-hero.jpg" alt="" /><span>Rooted in craft. Made by India.</span></div>
+        <div className="test-account-art"><img src="/images/naviraa-home-hero.jpg" alt="" /><span>Discover what India is building.</span></div>
       </aside>
       <div className="test-account-access">
-        <span className="test-eyebrow">AARAMBH COMMUNITY</span>
-        <h2>{mode === 'register' ? 'Create your account' : 'Sign in to Aarambh'}</h2>
+        <span className="test-eyebrow">NAVIRAA COMMUNITY</span>
+        <h2>{mode === 'register' ? 'Create your account' : 'Sign in to Naviraa'}</h2>
         <p>{mode === 'register' ? 'Start with a fictional profile for this interactive preview.' : 'Welcome back. Continue with your synthetic test account.'}</p>
         <form className="test-form-card" onSubmit={event => void submit(event)}>
           <div className="test-form-tabs"><button type="button" aria-pressed={mode === 'login'} className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')}>Sign in</button><button type="button" aria-pressed={mode === 'register'} className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')}>Register synthetic account</button></div>
@@ -944,7 +945,7 @@ function WorkspacePage() {
 function TestRouter() {
   const { pathname } = useLocation()
   const { user } = useTestSession()
-  if (pathname === '/test' || pathname === '/test/') return <AarambhHomepage />
+  if (pathname === '/test' || pathname === '/test/') return <NaviraaHomepage />
   if (pathname === '/test/account') return <AccountPage />
   if (pathname === '/test/workspace') return <WorkspacePage />
   if (pathname === '/test/leaderboard') return <LeaderboardPage />
@@ -978,7 +979,7 @@ function TestRouter() {
 export function InteractiveTestMode() {
   useEffect(() => {
     const previousTitle = document.title
-    document.title = 'Aarambh — Interactive synthetic test preview'
+    document.title = 'Naviraa — Discover what India is building.'
     return () => { document.title = previousTitle }
   }, [])
   return <SessionProvider><TestShell><TestRouter /></TestShell></SessionProvider>

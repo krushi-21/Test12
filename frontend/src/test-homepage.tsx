@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { ArrowRight, ArrowUpRight, Bell, Bookmark, CalendarDays, Compass, Home, MapPin, Search, Sparkles, Store, TrendingUp, UserRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { FollowTarget } from './test-features'
+import { NaviraaMark } from './ui'
 import './test-homepage.css'
 
 type Category = { id: string; name: string; slug: string }
@@ -24,7 +25,7 @@ type HomeFounder = { id: string; slug: string; displayName: string; bio?: string
 type PublicCollection = { id: string; name: string; description?: string; isPublic: boolean; shareUrl?: string; launchCount: number; launches: Launch[] }
 type ApiError = { error?: { message?: string } }
 
-const FOUNDER_PORTRAIT_FALLBACK = '/images/aarambh-home-hero.jpg'
+const FOUNDER_PORTRAIT_FALLBACK = '/images/naviraa-home-hero.jpg'
 type FounderPageArtwork = { src: string; altText: string; fallbackSrc?: string; fallbackAltText?: string }
 const FOUNDER_LAUNCH_ARTWORK: Record<string, { src: string; altText: string }> = {
   'miti-handwoven-home-textiles': { src: '/images/launch-textile.jpg', altText: 'Textile stitching at an artisan work table' },
@@ -117,7 +118,7 @@ function LaunchCard({ launch, rank, score }: { launch: Launch; rank?: number; sc
 }
 
 const HOME_BUSINESS_PHOTOS: Record<string, string> = {
-  'arts-crafts': '/images/aarambh-home-hero.jpg',
+  'arts-crafts': '/images/naviraa-home-hero.jpg',
   'food-beverage': '/images/launch-home.jpg',
   'fashion-accessories': '/images/launch-textile.jpg',
   'home-living': '/images/launch-saffron.jpg',
@@ -140,7 +141,7 @@ function BusinessCard({ business, subtitle, featured = false }: { business: Busi
 
 function EmptyMessage({ children }: { children: ReactNode }) { return <div className="home-empty-message">{children}</div> }
 
-export function AarambhHomepage() {
+export function NaviraaHomepage() {
   const [city, setCity] = useState('Ahmedabad')
   const [categories, setCategories] = useState<Category[]>([])
   const [popularCategories, setPopularCategories] = useState<Array<Category & { launchCount?: number }>>([])
@@ -233,11 +234,11 @@ export function AarambhHomepage() {
   const sectionError = (key: string) => sectionErrors[key] ? <EmptyMessage>{sectionErrors[key]}</EmptyMessage> : null
   const heroCategories = (popularCategories.length ? popularCategories : categories).slice(0, 3)
 
-  return <section className="test-homepage" aria-label="Aarambh homepage">
+  return <section className="test-homepage" aria-label="Naviraa homepage">
     <header className="home-site-header">
       <div className="home-topbar-inner">
-        <Link className="home-wordmark" to="/test" aria-label="Aarambh home"><span className="home-brand-mark" aria-hidden="true" /><span>AARAMBH</span></Link>
-        <form className="home-search" onSubmit={event => void submitSearch(event)} role="search" aria-label="Search Aarambh">
+        <Link className="home-wordmark" to="/test" aria-label="Naviraa home"><NaviraaMark className="home-brand-mark" /><span>naviraa</span></Link>
+        <form className="home-search" onSubmit={event => void submitSearch(event)} role="search" aria-label="Search Naviraa">
           <Search size={20} aria-hidden="true" />
           <label className="visually-hidden" htmlFor="home-unified-search">Search businesses, launches, and founders</label>
           <input id="home-unified-search" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search makers, products, categories, cities" />
@@ -255,16 +256,16 @@ export function AarambhHomepage() {
     <div className="test-content-width">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
-          <span className="home-hero-kicker">THE LOCAL DISCOVERY PLATFORM</span>
-          <h1 id="home-title">Rooted in craft.<br />Made by India.</h1>
-          <p>Meet the makers. Explore new launches. Support local.<br />Build a stronger India, together.</p>
+          <span className="home-hero-kicker">A COMMUNITY FOR IDEAS MADE IN INDIA</span>
+          <h1 id="home-title">Discover what India is building.</h1>
+          <p>Meet the makers. Explore new launches. Find your next favourite—made in India and beyond.</p>
           <div className="home-hero-actions"><Link to={locationQuery()} className="home-launch-cta">Explore makers <ArrowRight size={17} aria-hidden="true" /></Link><Link to={locationQuery()} className="home-secondary-cta">Browse nearby <ArrowUpRight size={16} aria-hidden="true" /></Link></div>
           <div className="home-social-proof" aria-label="Discover independent makers close to home">
             <span className="home-proof-markers" aria-hidden="true"><span><Store size={14} /></span><span><Sparkles size={14} /></span><span><MapPin size={14} /></span></span>
             <p>Discover the makers behind the good things around you.</p>
           </div>
         </div>
-        <div className="home-hero-visual"><img src="/images/aarambh-home-hero.jpg" alt="A maker shaping a ceramic bowl in her studio" /><span className="home-hero-badge">New in {city}</span><div className="home-maker-card"><span className="home-maker-card-eyebrow">MEET THE MAKER</span><strong>Independent maker · {city}</strong><span className="home-maker-card-meta"><i aria-hidden="true" />Handmade, with intention</span></div></div>
+        <div className="home-hero-visual"><img src="/images/naviraa-home-hero.jpg" alt="A maker shaping a ceramic bowl in her studio" /><span className="home-hero-badge">New in {city}</span><div className="home-maker-card"><span className="home-maker-card-eyebrow">MEET THE MAKER</span><strong>Independent maker · {city}</strong><span className="home-maker-card-meta"><i aria-hidden="true" />Handmade, with intention</span></div></div>
       </section>
 
       <div className="home-category-browse-row">
@@ -277,7 +278,7 @@ export function AarambhHomepage() {
       </div>
 
       {searchTerm && <section className="home-search-results" aria-live="polite" aria-label="Search results">
-        <div className="home-search-results-heading"><div><span className="test-eyebrow">AARAMBH SEARCH</span><h2>Results for “{searchTerm}”</h2></div><button type="button" onClick={() => { setSearchTerm(''); setSearchError('') }}>Clear search</button></div>
+        <div className="home-search-results-heading"><div><span className="test-eyebrow">NAVIRAA SEARCH</span><h2>Results for “{searchTerm}”</h2></div><button type="button" onClick={() => { setSearchTerm(''); setSearchError('') }}>Clear search</button></div>
         {searchBusy && <EmptyMessage>Searching businesses, launches, and founders…</EmptyMessage>}
         {searchError && <EmptyMessage>{searchError}</EmptyMessage>}
         {!searchBusy && !searchError && <>
@@ -409,7 +410,7 @@ export function SyntheticFounderPage({ slug, user }: { slug: string; user: Profi
   const location = [currentFounder?.city, currentFounder?.state].filter(Boolean).join(', ')
   const roleAndLocation = [currentFounder?.role, currentFounder?.pronouns, location].filter(Boolean).join(' · ')
   return <section className="test-content-width test-feature-page home-founder-page" aria-label="Public founder profile">
-    <Link className="test-back-link" to="/test">← Back to Aarambh</Link>
+    <Link className="test-back-link" to="/test">← Back to Naviraa</Link>
     {loadedSlug !== slug ? <div className="test-notice">Loading founder profile…</div> : error ? <div className="test-notice test-notice-error">{error}</div> : !currentFounder ? <div className="test-notice">Loading founder profile…</div> : <>
       <header className="home-founder-hero">
         <div className="home-founder-identity">

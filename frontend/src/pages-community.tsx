@@ -278,7 +278,7 @@ function CommunityHubPreview({ user }: { user?: CommunityUser | null }) {
       <main className="community-hub-main">
         <section className="community-hub-hero" aria-labelledby="community-hub-hero-title">
           <div><span className="community-eyebrow">MADE BY INDIA. MADE FOR ALL.</span><h2 id="community-hub-hero-title">Made together.<br />Grows together.</h2><p>A public space to meet makers, share stories, and join conversations from Ahmedabad and beyond.</p><Link className="community-hub-hero-link" to="/test/nearby">Discover makers <ArrowRight size={15} aria-hidden="true" /></Link></div>
-          <img src="/images/aarambh-home-hero.jpg" alt="A fictional maker shaping a clay vessel in a sunlit studio" />
+          <img src="/images/naviraa-home-hero.jpg" alt="A fictional maker shaping a clay vessel in a sunlit studio" />
         </section>
 
         <section className="community-hub-section" aria-labelledby="community-hub-people-title">

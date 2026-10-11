@@ -168,7 +168,7 @@ async function browserSmoke() {
     }
 
     const home = await openRoute('/', 'Explore launches')
-    assert.match(home.title, /Synthetic demo/i)
+    assert.match(home.title, /Naviraa/i)
     assert.match(home.text, /synthetic demo\s*[·-]\s*non-production\s*[·-]\s*read-only/i)
     assert.ok(home.titleRect && home.searchRect && home.categoriesRect && home.firstCardRect, 'mobile Explore must show value, search, categories, and launch card')
     assert.ok(home.titleRect.height <= home.titleRect.lineHeight * 1.6, 'mobile value statement should fit on one line')
@@ -181,15 +181,16 @@ async function browserSmoke() {
     assert.equal(home.forms.length, 0, 'Explore must not expose contact or write forms')
     assert.ok(home.inputs.every((input) => input.type === 'search'), 'Explore should expose search only, not account/contact data inputs')
     assert.doesNotMatch(home.text, /\b(?:contact|edit|funding|analytics|likes?|saves?|reports?|share)\b/i, 'Explore must not expose contact, edit, funding, analytics, engagement, report, or share actions')
+    assert.ok(home.text.includes('Discover what India is building.'), 'the read-only home should carry Naviraa’s approved tagline')
     assert.equal(await evaluate(`JSON.stringify([...document.querySelectorAll('.category-chip')].map((button) => button.textContent.trim()))`), JSON.stringify(['All launches', 'Home & Living', 'Food & Beverage', 'Beauty & Personal Care', 'Fashion & Accessories', 'Community & Social', 'Arts & Crafts']), 'category chips must be limited to the approved fixture categories')
     assert.equal(await evaluate('document.querySelector(".clear-filters") === null'), true, 'default Explore should not spend first-viewport space on an inactive clear-filter control')
     assert.equal(await evaluate('document.querySelector("#launch-search")?.type'), 'search', 'Explore search should be exposed as a standard keyboard-operable search input')
     assert.equal(await evaluate('document.querySelector("#launch-search")?.tabIndex'), 0, 'Explore search should be keyboard-focusable')
-    assert.doesNotMatch(home.text, /sign in|sign up|join aarambh|launch your idea/i, 'Explore must have no account/launch CTA')
+    assert.doesNotMatch(home.text, /sign in|sign up|join naviraa|launch your idea/i, 'Explore must have no account/launch CTA')
     assert.ok(home.text.includes('Founder tools coming soon'), 'founder tools should be explicitly marked as coming soon')
-    assert.equal(await evaluate(`document.querySelector('.top-links a[aria-label="How Aarambh works"]')?.getAttribute('href')`), '/how-it-works', 'the shared navigation should expose an internal How Aarambh works link')
-    await evaluate(`document.querySelector('.top-links a[aria-label="How Aarambh works"]').click()`)
-    await waitFor(async () => evaluate('document.querySelector(".page-heading h1")?.textContent.trim() === "How Aarambh works"'), 'the shared navigation link should open the informational route')
+    assert.equal(await evaluate(`document.querySelector('.top-links a[aria-label="How Naviraa works"]')?.getAttribute('href')`), '/how-it-works', 'the shared navigation should expose an internal How Naviraa works link')
+    await evaluate(`document.querySelector('.top-links a[aria-label="How Naviraa works"]').click()`)
+    await waitFor(async () => evaluate('document.querySelector(".page-heading h1")?.textContent.trim() === "How Naviraa works"'), 'the shared navigation link should open the informational route')
     await openRoute('/', 'Explore launches')
 
     const launchRoutes = await evaluate(`Array.from(document.querySelectorAll('.launch-card')).map((card) => {
@@ -310,7 +311,7 @@ async function browserSmoke() {
     await writeFile(screenshotPath, Buffer.from(png.data, 'base64'))
 
     const publicRoutes = [
-      ['/how-it-works', 'How Aarambh works'],
+      ['/how-it-works', 'How Naviraa works'],
       ['/launch/kala-clay-monsoon-objects', 'Objects that bring the monsoon home'],
       ['/brand/kala-clay-studio', 'Kala Clay Studio'],
       ['/founder/sample-founder-ananya', 'Ananya Mehta'],
@@ -322,7 +323,7 @@ async function browserSmoke() {
       assert.ok(page.bodyWidth <= page.viewportWidth, `${route} must not overflow at mobile width`)
     }
 
-    const howPage = await openRoute('/how-it-works', 'How Aarambh works')
+    const howPage = await openRoute('/how-it-works', 'How Naviraa works')
     const howInfo = await evaluate(`(() => ({
       title: document.querySelector('.page-heading h1')?.textContent.trim(),
       steps: Array.from(document.querySelectorAll('.how-step h3')).map((heading) => heading.textContent.trim()),
@@ -331,7 +332,7 @@ async function browserSmoke() {
       backHref: document.querySelector('.how-it-works-page .back-link')?.getAttribute('href'),
       browseHrefs: Array.from(document.querySelectorAll('.how-preview-links a')).map((link) => link.getAttribute('href')),
     }))()`)
-    assert.equal(howInfo.title, 'How Aarambh works', 'the informational page should have a clear title')
+    assert.equal(howInfo.title, 'How Naviraa works', 'the informational page should have a clear title')
     assert.deepEqual(howInfo.steps, ['Explore sample launches', 'Open a local detail page', 'Read sample positions carefully'], 'the guide should explain the local browsing flow')
     assert.match(howInfo.content, /fictional records and images are bundled locally/i, 'the guide should state that examples are bundled fixtures')
     assert.match(howInfo.content, /the frontend does not call an API/i, 'the guide should explain the local-only data boundary')
@@ -346,7 +347,7 @@ async function browserSmoke() {
     assert.equal(howPage.unsafeLinks.length, 0, 'the guide must use only internal, non-API navigation')
     assert.ok(howPage.bodyWidth <= howPage.viewportWidth, 'the guide must not overflow at 390px mobile width')
     await client.send('Emulation.setDeviceMetricsOverride', { width: 320, height: 740, deviceScaleFactor: 1, mobile: true })
-    const narrowHowPage = await openRoute('/how-it-works', 'How Aarambh works')
+    const narrowHowPage = await openRoute('/how-it-works', 'How Naviraa works')
     assert.ok(narrowHowPage.bodyWidth <= narrowHowPage.viewportWidth, `the guide and shared navigation must not overflow at 320px (${narrowHowPage.bodyWidth}px > ${narrowHowPage.viewportWidth}px)`)
     assert.ok(await evaluate('document.querySelector(".top-links")?.getBoundingClientRect().right <= document.documentElement.clientWidth'), 'the compact navigation should remain within the 320px viewport')
     await client.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
@@ -422,7 +423,7 @@ async function browserSmoke() {
     await waitFor(async () => evaluate('document.querySelector("#launch-title")?.textContent.trim() === "Objects that bring the monsoon home"'), 'following a leaderboard row should open its internal launch detail')
     assert.equal(await evaluate('document.querySelector(".back-link")?.getAttribute("href")'), '/', 'launch detail opened from the leaderboard should offer Back to Explore')
     await evaluate('document.querySelector(".back-link").click()')
-    await waitFor(async () => evaluate('document.querySelector("#explore-title")?.textContent.trim() === "See what’s just launched."'), 'launch detail should provide a working internal return to Explore')
+    await waitFor(async () => evaluate('document.querySelector("#explore-title")?.textContent.trim() === "Discover what India is building."'), 'launch detail should provide a working internal return to Explore')
 
     assert.equal(brandRoutes.length, 6, 'all six synthetic fixture brands should be reachable from launch details')
     assert.equal(founderRoutes.length, 6, 'all six unique synthetic fixture founders should be reachable from launch details')
@@ -624,7 +625,7 @@ try {
   console.log(`PASS: source audit inspected ${sourceCount} active frontend modules; no personal-data inputs or account/write handlers.`)
   console.log(`PASS: Worker returned local 404s for ${workerResult.blockedCases} /api route/method cases; upstream fetches=${workerResult.upstreamFetches}, /api asset lookups=${workerResult.apiAssetFetches}, credentials echoed=${workerResult.credentialsEchoed}, port-4000 traffic=${workerResult.port4000Traffic}.`)
   console.log(`PASS: production browser rendered ${browserResult.publicRoutes} public routes and denied ${browserResult.blockedRoutes} account/workspace paths without forms.`)
-  console.log('PASS: How Aarambh works is reachable through internal navigation, explains local synthetic/read-only behavior, exposes no forms or external/API links, and fits 320px mobile width.')
+  console.log('PASS: How Naviraa works is reachable through internal navigation, explains local synthetic/read-only behavior, exposes no forms or external/API links, and fits 320px mobile width.')
   console.log('PASS: Explore matched launch, brand, and founder names; combined category+query, clear/no-match recovery, keyboard/focus access, and internal profile links worked without API, external, or write requests.')
   console.log(`PASS: ${browserResult.launchesAudited} launch cards resolved to their matching fixture-backed detail route and local brand/founder links; unavailable launch has an Explore path.`)
   console.log(`PASS: sample leaderboard audited ${browserResult.leaderboardRowsAudited} fixture-backed Weekly/Monthly rows, exact note, local category filter, distinct empty state, internal detail/Explore navigation, and no formula or engagement metrics.`)

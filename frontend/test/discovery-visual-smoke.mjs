@@ -62,7 +62,7 @@ class CdpClient {
 }
 
 const debugPort = await freePort()
-const profile = await mkdtemp(path.join(os.tmpdir(), 'aarambh-discovery-visual-'))
+const profile = await mkdtemp(path.join(os.tmpdir(), 'naviraa-discovery-visual-'))
 const screenshotDir = process.env.DISCOVERY_SCREENSHOT_DIR
 const browser = spawn(chromium, [
   '--headless', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking',
@@ -107,12 +107,19 @@ try {
     ]
     window.__discoveryMockItems = businesses
     window.__discoveryMockFullItems = businesses
-    window.__discoveryMockDelayMs = 900
+    window.__discoveryMockDelayMs = 2500
     window.__discoveryMockFailure = false
     window.__discoveryMockCalls = []
     window.fetch = (input, init) => {
       const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input)
-      if (new URL(url, location.href).pathname === '/api/discover/businesses') {
+      const pathname = new URL(url, location.href).pathname
+      if (pathname === '/api/me') return Promise.resolve(new Response(JSON.stringify({ user: null }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      if (pathname === '/api/categories') return Promise.resolve(new Response(JSON.stringify({ categories: [
+        { id: 'food-beverage', slug: 'food-beverage', name: 'Food & Beverage' },
+        { id: 'arts-crafts', slug: 'arts-crafts', name: 'Arts & Crafts' },
+        { id: 'home-living', slug: 'home-living', name: 'Home & Living' },
+      ] }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+      if (pathname === '/api/discover/businesses') {
         window.__discoveryMockCalls.push(url)
         if (window.__discoveryMockFailure) return Promise.reject(new Error('Synthetic discovery request failed'))
         const response = new Response(JSON.stringify({ items: window.__discoveryMockItems, nextCursor: null }), { status: 200, headers: { 'Content-Type': 'application/json' } })
@@ -123,9 +130,8 @@ try {
   })()` })
   await client.send('Page.navigate', { url: parsed.href })
   await waitFor(() => evaluate('Boolean(document.querySelector(".test-discovery-filters"))'), 'nearby controls')
-  await evaluate(` [...document.querySelectorAll('.test-action-row button')].find(button => button.textContent.trim() === 'Map view')?.click()`)
-  await waitFor(() => evaluate('document.querySelector(".test-map-loading")?.textContent.trim()'), 'designer initial loading message')
-  assert.equal(await evaluate('document.querySelector(".test-map-loading")?.textContent.trim()'), 'Finding makers near Ahmedabad…')
+  const loadingMessage = await waitFor(() => evaluate('document.querySelector(".test-map-loading")?.textContent.trim()'), 'designer initial loading message')
+  assert.equal(loadingMessage, 'Finding makers near Ahmedabad…')
   await waitFor(() => evaluate('document.querySelectorAll(".test-business-card").length === 3'), 'mixed-coordinate businesses')
   await evaluate('document.querySelectorAll(".test-business-card-thumb img").forEach(image => { image.loading = "eager" })')
   await waitFor(() => evaluate('[...document.querySelectorAll(".test-business-card-thumb img")].length === 3 && [...document.querySelectorAll(".test-business-card-thumb img")].every(image => image.complete && image.naturalWidth > 0)'), 'business thumbnail fixtures and missing-image fallback')
@@ -133,7 +139,7 @@ try {
     const image = card.querySelector('.test-business-card-thumb img')
     return { name: card.querySelector('h2')?.innerText, alt: image?.alt, src: image ? new URL(image.currentSrc, location.href).pathname : '', loaded: Boolean(image?.complete && image.naturalWidth > 0) }
   }))`)
-  assert.deepEqual(thumbnails.map(image => image.src), ['/images/launch-home.jpg', '/images/aarambh-home-hero.jpg', '/images/launch-saffron.jpg'], 'cards should prefer the supplied business logo and use existing category photos when absent or broken')
+  assert.deepEqual(thumbnails.map(image => image.src), ['/images/launch-home.jpg', '/images/naviraa-home-hero.jpg', '/images/launch-saffron.jpg'], 'cards should prefer the supplied business logo and use existing category photos when absent or broken')
   assert.ok(thumbnails.every(image => image.loaded && image.alt === `${image.name} business photo`), 'each thumbnail should load and expose descriptive alt text')
 
   const desktop = await evaluate(`(() => {
@@ -145,7 +151,7 @@ try {
     const nav = document.querySelector('.test-sidebar-nav')
     const navLink = document.querySelector('.test-sidebar-nav .test-nav-link')
     return {
-      themeInk: getComputedStyle(section).getPropertyValue('--aarambh-ink').trim(),
+      themeInk: getComputedStyle(section).getPropertyValue('--naviraa-ink').trim(),
       titleFont: getComputedStyle(title).fontFamily,
       titleText: title.textContent.trim(),
       descriptionText: document.querySelector('.test-page-heading p')?.textContent.trim(),
@@ -161,14 +167,14 @@ try {
       horizontalOverflow: document.documentElement.scrollWidth > innerWidth
     }
   })()`)
-  assert.equal(desktop.themeInk, '#1b2642')
-  assert.match(desktop.titleFont, /Georgia/u)
+  assert.equal(desktop.themeInk, '#2D2723')
+  assert.match(desktop.titleFont, /Playfair Display/u)
   assert.equal(desktop.titleText, 'Explore makers near you')
   assert.equal(desktop.descriptionText, 'Independent makers and small businesses around Ahmedabad.')
   assert.equal(desktop.filterRadius, '16px')
-  assert.equal(desktop.shellBackground, 'rgb(27, 38, 66)')
-  assert.equal(desktop.shellWordmark, 'rgb(247, 245, 239)')
-  assert.equal(desktop.navLinkColor, 'rgb(247, 245, 239)')
+  assert.equal(desktop.shellBackground, 'rgb(45, 39, 35)')
+  assert.equal(desktop.shellWordmark, 'rgb(248, 244, 238)')
+  assert.equal(desktop.navLinkColor, 'rgb(248, 244, 238)')
   assert.equal(desktop.menuOpen, true, 'the persistent desktop sidebar should be open')
   assert.equal(desktop.navVisible, true, 'desktop route links should be visible without a menu toggle')
   assert.equal(desktop.sidebarWidth, 248, 'desktop routes should use the fixed-width shared sidebar')
@@ -314,7 +320,7 @@ try {
   assert.equal(narrowMobile.horizontalOverflow, false, 'discovery should fit a 320px viewport')
   assert.ok(narrowMobile.mapWidth > 0 && narrowMobile.mapWidth <= 320, 'the coordinate plot should fit a 320px viewport')
   assert.ok(narrowMobile.thumbnailWidths.length === 3 && narrowMobile.thumbnailWidths.every(width => width > 0 && width <= 64), '320px business thumbnails should remain compact and visible')
-  console.log('PASS: page-21 discovery copy and loading/empty/error states, accessible business photos and fallback, design tokens, navy shell, coordinate-verified pins, missing-location state, map/list selection, distance options, and desktop/390px/320px layouts.')
+  console.log('PASS: page-21 discovery copy and loading/empty/error states, accessible business photos and fallback, design tokens, charcoal shell, coordinate-verified pins, missing-location state, map/list selection, distance options, and desktop/390px/320px layouts.')
 } finally {
   client?.close()
   browser.kill('SIGTERM')

@@ -32,8 +32,8 @@ export function ExplorePage() {
 
   return <AppShell><div className="content-width explore-page">
     <section className="explore-intro" aria-labelledby="explore-title">
-      <h1 id="explore-title" className="explore-value">See what’s just launched.</h1>
-      <p>New ideas and independent makers from across India.</p>
+      <h1 id="explore-title" className="explore-value">Discover what India is building.</h1>
+      <p>Explore launches, small businesses, and the independent makers behind them—across India.</p>
     </section>
     <div className="explore-search" role="search">
       <Search size={18} aria-hidden="true" />
@@ -65,7 +65,7 @@ export function ExplorePage() {
 export function HowItWorksPage() {
   return <AppShell><div className="content-width standard-page how-it-works-page">
     <Link to="/" className="back-link"><ArrowLeft size={16} aria-hidden="true" />Back to Explore</Link>
-    <PageHeading eyebrow="ABOUT THE LOCAL PREVIEW" title="How Aarambh works" description="A quick guide to browsing this fixture-only discovery preview." />
+    <PageHeading eyebrow="ABOUT THE LOCAL PREVIEW" title="How Naviraa works" description="A quick guide to browsing this fixture-only discovery preview." />
     <aside className="how-it-works-note" aria-label="Preview status">
       <span className="tag tag-neutral">Synthetic · read-only</span>
       <p>This preview is for exploring sample launches. Its fictional records and images are bundled locally; no real user data is used.</p>

@@ -55,7 +55,7 @@ class CdpClient {
 }
 
 const debugPort = await freePort()
-const profileDir = await mkdtemp(path.join(os.tmpdir(), 'aarambh-reference-qa-'))
+const profileDir = await mkdtemp(path.join(os.tmpdir(), 'naviraa-reference-qa-'))
 const browser = spawn(chromium, [
   '--headless', '--no-sandbox', '--disable-dev-shm-usage', '--disable-background-networking',
   '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--ignore-certificate-errors',
@@ -148,7 +148,7 @@ try {
   await writeFile(path.join(outputDir, 'page-18-account-signup.png'), Buffer.from(signUpImage.data, 'base64'))
   const signUpState = await evaluate('({pathname:location.pathname,title:document.querySelector("h1")?.innerText.trim() ?? "",bodyCharacters:document.body.innerText.length,horizontalOverflow:document.documentElement.scrollWidth>innerWidth,shellPresent:Boolean(document.querySelector(".test-sidebar")),viewport:{width:innerWidth,height:innerHeight}})')
   assert.equal(signUpState.horizontalOverflow, false, 'Sign-up screen should fit the desktop viewport')
-  assert.equal(signUpState.title, 'Join the Aarambh community', 'Sign-up screen should use the reference community heading')
+  assert.equal(signUpState.title, 'Join the Naviraa community', 'Sign-up screen should use the reference community heading')
   manifest.push({ id: 18, slug: 'account-signup', name: 'Create account', filename: 'page-18-account-signup.png', ...signUpState })
 
   await navigate('/test/account')
