@@ -127,7 +127,7 @@ export function AuthCard({
 }) {
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md items-center px-4 py-12">
-      <div className="w-full rounded-t-[10rem] rounded-b-3xl border border-border bg-card px-8 pb-8 pt-20">
+      <div className="w-full rounded-lg border border-border bg-card px-8 py-10">
         <h1 className="text-center font-display text-3xl font-semibold">{title}</h1>
         {subtitle && <p className="mt-2 text-center text-sm text-muted-foreground">{subtitle}</p>}
         <div className="mt-8">{children}</div>

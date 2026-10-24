@@ -1,36 +1,23 @@
-import { useDemo } from "@/lib/store";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { PageHeading } from "@/components/site";
-
+import { useDemo } from "@/lib/store";
+import { PageHeading, Avatar } from "@/components/site";
+import { DetailTabs, EmptyState } from "@/components/discovery-ui";
+import { FollowButton } from "@/components/reviews";
+import { seo } from "@/lib/seo";
 export const Route = createFileRoute("/trending")({
-  head: () => ({
-    meta: [
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { title: "Trending businesses — Naviraa" },
-      {
-        name: "description",
-        content: "Trending today, this week and this month, plus rising businesses across India.",
-      },
-      { property: "og:title", content: "Trending businesses — Naviraa" },
-      {
-        property: "og:description",
-        content: "Trending today, this week and this month across India.",
-      },
-    ],
-  }),
-  component: Trending,
+  head: () =>
+    seo(
+      "Leaderboard",
+      "Sample business rankings and honest founder ranking availability on Naviraa.",
+    ),
+  component: Leaderboard,
 });
-
-const windows = { Today: 1, "This week": 7, "This month": 30 } as const;
-type W = keyof typeof windows;
-
-function Trending() {
+function Leaderboard() {
   const { businesses } = useDemo();
-  const [w, setW] = useState<W>("This week");
-  const days = windows[w];
-  const ranked = [...businesses]
+  const [tab, setTab] = useState("Businesses");
+  const [days, setDays] = useState(7);
+  const ranked = businesses
     .map((b) => ({
       b,
       score: Math.round((b.likes + b.saves * 2) / (Math.max(b.launchedDaysAgo, 0) / days + 1)),
@@ -38,48 +25,73 @@ function Trending() {
     .sort((a, b) => b.score - a.score);
   return (
     <>
-      <PageHeading eyebrow="Leaderboard" title="Trending on Naviraa">
-        Rankings are based on likes and saves and are still being tuned.
+      <PageHeading eyebrow="Community" title="Leaderboard">
+        A look at the businesses making waves in the preview.
       </PageHeading>
-      <div className="mx-auto max-w-3xl px-4">
-        <div className="inline-flex rounded-full bg-card p-1">
-          {(Object.keys(windows) as W[]).map((k) => (
-            <button
-              key={k}
-              onClick={() => setW(k)}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${w === k ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-            >
-              {k}
-            </button>
-          ))}
-        </div>
-        <ol className="mt-8 space-y-3">
-          {ranked.map(({ b, score }, i) => (
-            <li key={b.slug}>
-              <Link
-                to="/businesses/$slug"
-                params={{ slug: b.slug }}
-                className="flex items-center gap-5 rounded-2xl border border-border bg-card p-4 hover:border-primary"
-              >
-                <span
-                  className={`font-display text-3xl font-semibold ${i < 3 ? "text-primary" : "text-muted-foreground"}`}
-                >
-                  {i + 1}
-                </span>
-                <div className="flex-1">
-                  <p className="font-semibold">{b.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {b.category} · {b.city}
-                  </p>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {score.toLocaleString("en-IN")} pts
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ol>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <DetailTabs items={["Businesses", "Founders"]} value={tab} onChange={setTab} />
+        <select
+          aria-label="Leaderboard period"
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+          className="rounded-lg border border-input bg-card px-3 py-2 text-xs"
+        >
+          <option value={1}>Today</option>
+          <option value={7}>This week</option>
+          <option value={30}>This month</option>
+        </select>
       </div>
+      {tab === "Founders" ? (
+        <EmptyState
+          title="Founder rankings unavailable"
+          action={
+            <Link to="/founders" className="text-primary">
+              Meet the founders
+            </Link>
+          }
+        >
+          No historical or cross-account founder ranking metrics are connected.
+        </EmptyState>
+      ) : (
+        <>
+          <p className="mb-5 text-xs leading-relaxed text-muted-foreground">
+            Sample scores use fictional fixture likes and saves, weighted by age and selected
+            period. These are not measured time-window totals. No growth percentages are available.
+          </p>
+          <ol className="space-y-3">
+            {ranked.map(({ b, score }, i) => (
+              <li
+                key={b.slug}
+                className="grid grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border bg-card p-4"
+              >
+                <span className="text-base font-semibold text-primary">{i + 1}</span>
+                <Link
+                  to="/businesses/$slug"
+                  params={{ slug: b.slug }}
+                  className="flex min-w-0 items-center gap-3"
+                >
+                  <Avatar
+                    photo={b.cover}
+                    initials={b.name.slice(0, 2)}
+                    className="hidden h-12 w-12 rounded-lg bg-muted sm:flex"
+                  />
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-semibold">{b.name}</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {b.category} · {b.city}
+                    </p>
+                    <p className="mt-1 text-[10px] text-accent">
+                      {score.toLocaleString("en-IN")} sample points
+                    </p>
+                  </div>
+                </Link>
+                <FollowButton id={`business:${b.slug}`} />
+              </li>
+            ))}
+          </ol>
+          {!ranked.length && <EmptyState title="No businesses to rank yet" />}
+        </>
+      )}
     </>
   );
 }

@@ -1,8 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, LayoutDashboard, LogOut, User } from "lucide-react";
+import { Bell, Bookmark, Heart, MessageCircle, LayoutDashboard, LogOut, User } from "lucide-react";
 import { useStore, useDemo } from "@/lib/store";
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { displayedComments, displayedReviews, reviewAverage } from "@/lib/activity";
+import { openingStatus } from "@/lib/validation";
+import { toast } from "sonner";
 import { type Business, type Launch, type Stage } from "@/lib/demo";
 
 export function Mark({ className = "h-8 w-8" }: { className?: string }) {
@@ -162,10 +165,10 @@ export function PageHeading({
   children?: ReactNode;
 }) {
   return (
-    <div className="mx-auto max-w-6xl px-4 pb-8 pt-12">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">{eyebrow}</p>
-      <h1 className="mt-2 font-display text-4xl font-semibold md:text-5xl">{title}</h1>
-      {children && <p className="mt-3 max-w-2xl text-muted-foreground">{children}</p>}
+    <div className="pb-6 pt-1">
+      <p className="sr-only">{eyebrow}</p>
+      <h1 className="font-display text-3xl font-semibold">{title}</h1>
+      {children && <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{children}</p>}
     </div>
   );
 }
@@ -270,76 +273,128 @@ export function PreviewStatus() {
 
 export function LaunchCard({ launch }: { launch: Launch }) {
   const { getBusiness } = useDemo();
-  const { comments } = useStore();
+  const { comments, likes, saves, user, toggle } = useStore();
   const b = getBusiness(launch.businessSlug);
   if (!b) return null;
+  const saved = saves.includes(launch.slug);
   return (
-    <Link
-      to="/launches/$slug"
-      params={{ slug: launch.slug }}
-      className="group block rounded-2xl border border-border bg-card p-3 transition hover:-translate-y-0.5 hover:shadow-lg"
-    >
-      <Cover hue={b.hue} src={b.cover} label={b.name} />
-      <div className="p-2 pt-4">
-        <div className="flex items-center justify-between gap-2">
-          <StageBadge stage={launch.stage} />
-          <span className="text-xs text-muted-foreground">{b.city}</span>
+    <article className="relative overflow-hidden rounded-lg border border-border bg-card">
+      <Link to="/launches/$slug" params={{ slug: launch.slug }} className="group block">
+        <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+          {b.cover && (
+            <img
+              src={b.cover}
+              alt={b.name}
+              width={1280}
+              height={720}
+              loading="lazy"
+              className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            />
+          )}
+          <div className="absolute left-3 top-3">
+            <StageBadge stage={launch.stage} />
+          </div>
         </div>
-        <h3 className="mt-3 font-display text-xl font-semibold group-hover:text-primary">
-          {launch.title}
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">{launch.summary}</p>
-        <div className="mt-4 flex gap-4 text-xs text-muted-foreground">
-          <span>♥ {launch.likes}</span>
-          <span>☆ {launch.saves} saves</span>
-          <span>💬 {2 + comments.filter((c) => c.launchSlug === launch.slug).length}</span>
+        <div className="p-4">
+          <h3 className="text-sm font-semibold group-hover:text-primary">{launch.title}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {b.name} · {b.city}
+          </p>
+          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+            {launch.summary}
+          </p>
+          <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+            <span
+              aria-label={`${likes.includes(launch.slug) ? 1 : 0} preview likes`}
+              className="flex items-center gap-1"
+            >
+              <Heart aria-hidden className="h-4 w-4 text-primary" />
+              {likes.includes(launch.slug) ? 1 : 0}
+            </span>
+            <span
+              aria-label={`${displayedComments(launch.slug, comments).length} preview comments`}
+              className="flex items-center gap-1"
+            >
+              <MessageCircle aria-hidden className="h-4 w-4" />
+              {displayedComments(launch.slug, comments).length}
+            </span>
+            <span className="ml-auto text-[10px]">Preview</span>
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+      <Button
+        variant="ghost"
+        size="icon"
+        title="Save launch"
+        aria-label={`Save launch ${launch.title}`}
+        aria-pressed={saved}
+        onClick={() => {
+          if (!user?.verified) return void toast("Sign in with a verified preview email to save.");
+          toggle("saves", launch.slug);
+        }}
+        className="absolute right-2 top-2 rounded-full bg-card/90"
+      >
+        <Bookmark className={`h-4 w-4 ${saved ? "fill-current text-primary" : ""}`} />
+      </Button>
+    </article>
   );
 }
-
 export function BusinessCard({ business: b }: { business: Business }) {
+  const { reviews, saves, user, toggle } = useStore();
+  const average = reviewAverage(displayedReviews(b.slug, reviews));
+  const saved = saves.includes(`business:${b.slug}`);
+  const status = openingStatus(b);
   return (
-    <Link
-      to="/businesses/$slug"
-      params={{ slug: b.slug }}
-      className="group flex flex-col rounded-2xl border border-border bg-card p-5 transition hover:shadow-lg"
-    >
-      {b.cover && (
-        <img
-          src={b.cover}
-          alt=""
-          width={1280}
-          height={720}
-          loading="lazy"
-          className="mb-4 aspect-[16/7] w-full rounded-xl object-cover"
-        />
-      )}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="font-display text-xl font-semibold group-hover:text-primary">{b.name}</h3>
-          <p className="text-sm text-muted-foreground">{b.tagline}</p>
+    <article className="relative overflow-hidden rounded-lg border border-border bg-card">
+      <Link to="/businesses/$slug" params={{ slug: b.slug }} className="group block">
+        <div className="aspect-[16/10] overflow-hidden bg-muted">
+          {b.cover ? (
+            <img
+              src={b.cover}
+              alt={b.name}
+              width={1280}
+              height={720}
+              loading="lazy"
+              className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <Mark className="h-12 w-12 text-primary" />
+            </div>
+          )}
         </div>
-        <span className="rounded-full shrink-0 bg-muted px-2 py-1 text-xs">★ {b.rating}</span>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-2 text-xs">
-        <span className="rounded-full bg-secondary px-2.5 py-1">{b.category}</span>
-        <span className="rounded-full border border-border px-2.5 py-1 capitalize">{b.mode}</span>
-        <span className="rounded-full border border-border px-2.5 py-1">
-          {b.area}, {b.city}
-        </span>
-        {b.verified && (
-          <span className="rounded-full bg-accent px-2.5 py-1 text-accent-foreground">
-            ✓ Email verified
-          </span>
-        )}
-        <span
-          className={`rounded-full px-2.5 py-1 ${b.openNow ? "text-accent" : "text-muted-foreground"}`}
-        >
-          {b.openNow ? "● Open now" : "○ Closed"}
-        </span>
-      </div>
-    </Link>
+        <div className="p-4">
+          <h3 className="text-sm font-semibold group-hover:text-primary">{b.name}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {b.category} · {b.city}
+          </p>
+          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+            {b.tagline}
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+            <span className={status === "Open now" ? "text-accent" : ""}>{status}</span>
+            <span>·</span>
+            <span>{average === null ? "No reviews" : `★ ${average.toFixed(1)} · Sample`}</span>
+          </div>
+          {b.verified && (
+            <p className="mt-2 text-[10px] text-accent">Account email verified · Preview</p>
+          )}
+        </div>
+      </Link>
+      <Button
+        variant="ghost"
+        size="icon"
+        title="Save business"
+        aria-label={`Save business ${b.name}`}
+        aria-pressed={saved}
+        onClick={() => {
+          if (!user?.verified) return void toast("Sign in with a verified preview email to save.");
+          toggle("saves", `business:${b.slug}`);
+        }}
+        className="absolute right-2 top-2 rounded-full bg-card/90"
+      >
+        <Bookmark className={`h-4 w-4 ${saved ? "fill-current text-primary" : ""}`} />
+      </Button>
+    </article>
   );
 }

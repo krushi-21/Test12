@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+import { displayedReviews, reviewAverage } from "@/lib/activity";
 import { Flag } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
@@ -6,21 +8,6 @@ import { btnPrimary, inputCls } from "@/components/bits";
 import { type Business } from "@/lib/demo";
 import { useStore } from "@/lib/store";
 import { canReview } from "@/lib/validation";
-
-const sample = [
-  {
-    id: "r1",
-    overall: 5,
-    text: "Beautiful quality and the founder answered all my questions on WhatsApp.",
-    recommend: true,
-  },
-  {
-    id: "r2",
-    overall: 4,
-    text: "Great value. Delivery took a little longer than expected.",
-    recommend: true,
-  },
-];
 
 function Stars({
   value,
@@ -79,24 +66,24 @@ export function ReviewSection({ business }: { business: Business }) {
     toast.success("Thanks for your review");
   };
 
-  const all = [
-    ...(mine
-      ? [{ id: "mine", overall: mine.overall, text: mine.text, recommend: mine.recommend }]
-      : []),
-    ...sample,
-  ];
+  const all = displayedReviews(business.slug, reviews);
+  const average = reviewAverage(all);
 
   return (
     <div className="mt-6 space-y-6">
       <p className="text-sm text-muted-foreground">
-        {(all.reduce((sum, r) => sum + r.overall, 0) / all.length).toFixed(1)} / 5 · {all.length}{" "}
-        preview reviews
+        {average === null
+          ? "No reviews yet."
+          : `${average.toFixed(1)} / 5 · ${all.length} preview reviews`}
       </p>
       <ul className="space-y-3">
         {all.map((r) => (
-          <li key={r.id} className="rounded-2xl border border-border bg-card p-5">
+          <li
+            key={r.id}
+            className={`rounded-2xl border border-border p-5 ${r.sample ? "bg-muted" : "bg-card"}`}
+          >
             <div className="flex items-center justify-between">
-              <span className="text-primary">
+              <span aria-label={`${r.overall} out of 5 stars`} className="text-primary">
                 {"★".repeat(r.overall)}
                 <span className="text-border">{"★".repeat(5 - r.overall)}</span>
               </span>
@@ -118,7 +105,8 @@ export function ReviewSection({ business }: { business: Business }) {
             </div>
             <p className="mt-2 text-sm">{r.text || "No written comment."}</p>
             <p className="mt-2 text-xs text-muted-foreground">
-              Verified member{r.recommend ? " · Recommends" : ""}
+              {r.sample ? "Sample" : "Your browser preview review"}
+              {r.recommend ? " · Recommends" : ""}
             </p>
           </li>
         ))}
@@ -174,16 +162,34 @@ export function ReviewSection({ business }: { business: Business }) {
 
 export function FollowButton({ id }: { id: string }) {
   const { user, follows, toggle } = useStore();
-  if (!user) return null;
+  if (!user)
+    return (
+      <Link
+        to="/signin"
+        className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-primary"
+      >
+        Sign in to follow
+      </Link>
+    );
+  if (!user.verified)
+    return (
+      <Link
+        to="/verify-email"
+        className="rounded-lg border border-border px-3 py-2 text-xs font-medium text-primary"
+      >
+        Verify email to follow
+      </Link>
+    );
   const on = follows.includes(id);
   return (
     <Button
       variant="ghost"
+      aria-pressed={on}
       onClick={() => {
         if (!user.verified) return void toast("Verify your email to follow");
         toggle("follows", id);
       }}
-      className={`rounded-full px-5 py-2.5 text-sm font-medium ${on ? "bg-accent text-accent-foreground" : "border border-foreground"}`}
+      className={`rounded-lg px-3 py-2 text-xs font-medium ${on ? "bg-secondary text-primary" : "border border-border text-primary"}`}
     >
       {on ? "Following" : "Follow"}
     </Button>

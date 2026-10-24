@@ -1,8 +1,9 @@
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { FollowButton } from "@/components/reviews";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Avatar, PageHeading } from "@/components/site";
-import { useStore, useDemo } from "@/lib/store";
+import { useDemo } from "@/lib/store";
 
 export const Route = createFileRoute("/founders")({
   head: () => ({
@@ -24,7 +25,6 @@ export const Route = createFileRoute("/founders")({
 function Founders() {
   const { businesses, founders } = useDemo();
   const [q, setQ] = useState("");
-  const { follows, toggle, user } = useStore();
   const list = founders.filter((f) =>
     `${f.name} ${f.city} ${f.interests.join(" ")}`.toLowerCase().includes(q.toLowerCase()),
   );
@@ -39,10 +39,25 @@ function Founders() {
           placeholder="Search founders by name, city or interest"
           className="w-full max-w-md rounded-full border border-input bg-card px-5 py-3 text-sm"
         />
+        {list.length === 0 && (
+          <div role="status" className="mt-6 space-y-3">
+            <p className="text-muted-foreground">
+              {founders.length ? "No founders match your search." : "No founders listed yet."}
+            </p>
+            {q ? (
+              <Button variant="outline" onClick={() => setQ("")}>
+                Clear search
+              </Button>
+            ) : (
+              <Link to="/launches" className="text-primary">
+                Explore launches
+              </Link>
+            )}
+          </div>
+        )}
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {list.map((f) => {
             const owned = businesses.filter((b) => b.founderSlug === f.slug);
-            const on = follows.includes(`founder:${f.slug}`);
             return (
               <div key={f.slug} className="rounded-2xl border border-border bg-card p-6">
                 <div className="flex items-center gap-4">
@@ -73,7 +88,7 @@ function Founders() {
                     </span>
                   ))}
                 </div>
-                <div className="mt-5 flex items-center justify-between">
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
                   <div className="text-sm">
                     {owned.map((b) => (
                       <Link
@@ -86,16 +101,7 @@ function Founders() {
                       </Link>
                     ))}
                   </div>
-                  <button
-                    onClick={() => {
-                      if (!user) return void toast("Sign in to follow founders");
-                      if (!user.verified) return void toast("Verify your email to follow founders");
-                      toggle("follows", `founder:${f.slug}`);
-                    }}
-                    className={`rounded-full px-4 py-1.5 text-sm font-medium ${on ? "bg-accent text-accent-foreground" : "border border-foreground"}`}
-                  >
-                    {on ? "Following" : "Follow"}
-                  </button>
+                  <FollowButton id={`founder:${f.slug}`} />
                 </div>
               </div>
             );

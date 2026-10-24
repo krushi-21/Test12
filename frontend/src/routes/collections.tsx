@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { PageHeading } from "@/components/site";
+import { Avatar, PageHeading } from "@/components/site";
 import { btnPrimary, inputCls, SignedIn } from "@/components/bits";
 import { useDemo } from "@/lib/store";
 import { sharePage } from "@/lib/share";
@@ -15,13 +15,13 @@ export const Route = createFileRoute("/collections")({
 });
 
 function Collections() {
-  const { getLaunch } = useDemo();
-  const { collections, set } = useStore();
+  const { getLaunch, getBusiness } = useDemo();
+  const { collections, set, savedCollections, toggle, user } = useStore();
   const [name, setName] = useState("");
   return (
     <>
       <PageHeading eyebrow="Your lists" title="Collections">
-        Group launches into private lists, or make them public and share a link.
+        Group launches into lists. Preview links are only available in this browser.
       </PageHeading>
       <div className="mx-auto max-w-4xl px-4">
         <SignedIn what="create collections" needVerified>
@@ -57,14 +57,42 @@ function Collections() {
               Create
             </Button>
           </form>
-          <div className="mt-8 space-y-4">
+          {collections.length === 0 && (
+            <p role="status" className="mt-6 text-muted-foreground">
+              No collections yet. Create your first collection above.
+            </p>
+          )}
+          <div className="mt-8 grid gap-5 sm:grid-cols-2">
             {collections.map((c) => (
-              <div key={c.id} className="rounded-2xl border border-border bg-card p-5">
+              <div
+                key={c.id}
+                className="overflow-hidden rounded-lg border border-border bg-card p-4"
+              >
+                {getBusiness(getLaunch(c.launchSlugs[0] ?? "")?.businessSlug ?? "")?.cover && (
+                  <Avatar
+                    photo={
+                      getBusiness(getLaunch(c.launchSlugs[0] ?? "")?.businessSlug ?? "")?.cover
+                    }
+                    initials="N"
+                    className="mb-4 aspect-[16/9] w-full rounded-lg bg-muted"
+                  />
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  aria-label={`Save collection ${c.name}`}
+                  aria-pressed={savedCollections.includes(c.id)}
+                  onClick={() => toggle("savedCollections", c.id)}
+                  className="mb-3 text-xs text-primary"
+                >
+                  {savedCollections.includes(c.id) ? "Collection saved" : "Save collection"}
+                </Button>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="font-display text-xl font-semibold">{c.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {c.launchSlugs.length} launches · {c.isPublic ? "Public" : "Private"}
+                      {c.launchSlugs.length} launches ·{" "}
+                      {c.isPublic ? "Preview link enabled" : "Private"}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -82,7 +110,7 @@ function Collections() {
                           }))
                         }
                       />
-                      Public
+                      Enable preview link
                     </label>
                     {c.isPublic && (
                       <>
@@ -96,17 +124,17 @@ function Collections() {
                         <Button
                           variant="ghost"
                           onClick={() => {
-                            void sharePage(`/c/${encodeURIComponent(c.id)}`, c.name);
+                            void sharePage(`/c/${encodeURIComponent(c.id)}`, c.name, false, true);
                           }}
                           className="rounded-full border border-border px-3 py-1.5"
                         >
-                          Copy link
+                          Copy preview link
                         </Button>
                       </>
                     )}
                     <ConfirmAction
                       title="Delete collection?"
-                      description="This removes the collection and its preview share link."
+                      description="This removes the collection and its browser-only preview link."
                       onConfirm={() =>
                         set((s) => ({
                           ...s,

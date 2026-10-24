@@ -6,9 +6,23 @@ import {
   toIst,
   canManage,
   canReview,
+  normalizePhone,
+  openingStatus,
 } from "@/lib/validation";
 
 describe("Launch readiness validation", () => {
+  it("does not claim closed when hours or current status are unknown", () => {
+    expect(openingStatus({ hours: [], openNow: false })).toBe("Hours unavailable");
+    expect(openingStatus({ hours: ["Mon 10–7"] })).toBe("Hours unavailable");
+    expect(openingStatus({ hours: ["Mon 10–7"], openNow: false })).toBe("Closed");
+    expect(openingStatus({ hours: ["Mon 10–7"], openNow: true })).toBe("Open now");
+  });
+  it("normalizes phone contacts and rejects invalid destinations", () => {
+    expect(normalizePhone("+91 90000 00001")).toBe("+919000000001");
+    expect(normalizePhone("phone:123")).toBeNull();
+    expect(normalizePhone("123")).toBeNull();
+    expect(normalizePhone(undefined)).toBeNull();
+  });
   it("only permits verified non-owners to review a business", () => {
     expect(canReview(null, "meera-iyer")).toBe(false);
     expect(canReview({ verified: false, founderSlug: "sana-qureshi" }, "meera-iyer")).toBe(false);

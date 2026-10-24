@@ -3,6 +3,7 @@ import { useDemo } from "@/lib/store";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { BusinessCard, PageHeading } from "@/components/site";
+import { openingStatus } from "@/lib/validation";
 import { categories, cities, type Mode } from "@/lib/demo";
 
 export const Route = createFileRoute("/businesses")({
@@ -98,7 +99,7 @@ function Businesses() {
         (!category || b.category === category) &&
         (!mode || b.mode === mode) &&
         (!price || b.priceRange === price) &&
-        (!openNow || b.openNow) &&
+        (!openNow || openingStatus(b) === "Open now") &&
         (!verified || b.verified) &&
         (!newOnly || b.launchedDaysAgo <= 14),
     );
@@ -219,7 +220,9 @@ function Businesses() {
           </div>
           {list.length === 0 && (
             <p className="rounded-2xl bg-card p-8 text-center text-muted-foreground">
-              No businesses match these filters.
+              {businesses.length
+                ? "No businesses match these filters. Use Clear filters to see all businesses."
+                : "No businesses listed yet."}
             </p>
           )}
         </div>

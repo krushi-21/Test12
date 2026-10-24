@@ -1,5 +1,15 @@
 # Naviraa frontend roadmap (UI only, backend later)
 
+- [x] Redesign foundation: shared tokens, desktop sidebars, search/account header, mobile drawer, consistent secondary pages
+- [x] Redesign discovery: personalized home, single-column social posts, shared threaded comments, launch filters/detail tabs
+- [x] Redesign community: business/founder details, Explore, Following, collections and saved entities
+- [x] Redesign platform: map filters, leaderboard, notifications, My Business and Analytics
+- [x] Redesign QA: routes, interaction tests, signed-in/out and mobile/tablet/desktop checks; document limitations
+
+- [x] October UI audit: truthful sample activity, local-only collection links, and unknown opening hours
+- [x] October UI audit: homepage, contact links, follow/read states, map clarity, URL filters, and recovery actions
+- [x] October UI audit: regression tests and mobile/desktop interaction checks
+
 - [x] Discovery: home, launches, launch detail, businesses, business detail, founders, trending
 - [x] Demo store (sign-in state, follows, saves, collections, notifications, reminders) persisted in browser
 - [x] Auth screens: sign in, sign up, verify email, forgot/reset password
@@ -17,4 +27,3 @@
 - [ ] Launch report: production domain, legal/contact details, moderation ownership, backups and live release verification (awaiting owner setup)
 - [ ] Deliver release code on a new Git branch (requires project Git connection and branch selection in Lovable)
 - [ ] Backend wiring (later — waiting on user)
-- [x] Remove previously added MCP and browser-agent integration code; frontend preview and existing Cloud services preserved, 30 tests pass and removed endpoints return 404.

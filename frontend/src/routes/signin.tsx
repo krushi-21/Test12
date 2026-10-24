@@ -33,7 +33,7 @@ function SignIn() {
             verified: true,
             founderSlug: "meera-iyer",
           });
-          toast.success("Signed in");
+          toast.success("Signed in to the browser preview");
           navigate({ to: "/feed" });
         }}
       >

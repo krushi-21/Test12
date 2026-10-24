@@ -1,19 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { PageHeading } from "@/components/site";
 import { btnOutline, btnPrimary, Panel, SignedIn } from "@/components/bits";
-import { analyticsDaily, trafficSources } from "@/lib/demo";
+import { Avatar } from "@/components/site";
 import { useStore, useDemo, type LaunchStatus } from "@/lib/store";
 import { ConfirmAction } from "@/components/actions";
 import { formatDate } from "@/lib/validation";
@@ -36,7 +25,7 @@ const statusStyle: Record<LaunchStatus, string> = {
 function Dashboard() {
   return (
     <>
-      <PageHeading eyebrow="Founder workspace" title="Your dashboard" />
+      <PageHeading eyebrow="Founder workspace" title="My Business" />
       <div className="mx-auto max-w-6xl px-4">
         <SignedIn what="open your workspace">
           <Workspace />
@@ -47,24 +36,13 @@ function Dashboard() {
 }
 
 function Workspace() {
-  const { businesses, launches } = useDemo();
+  const { businesses } = useDemo();
   const { user, ownLaunches, set } = useStore();
-  const [range, setRange] = useState<"daily" | "weekly" | "monthly">("daily");
+  const [selected, setSelected] = useState("");
   const mine = businesses.filter((b) => b.founderSlug === user?.founderSlug);
-  const visibleLaunches = ownLaunches.filter((l) => mine.some((b) => b.slug === l.businessSlug));
-  const data =
-    range === "daily"
-      ? analyticsDaily.slice(-7)
-      : range === "weekly"
-        ? analyticsDaily.slice(-14)
-        : analyticsDaily;
-  const totals = data.reduce(
-    (a, d) => ({
-      visits: a.visits + d.visits,
-      clicks: a.clicks + d.clicks,
-      saves: a.saves + d.saves,
-    }),
-    { visits: 0, clicks: 0, saves: 0 },
+  const visibleLaunches = ownLaunches.filter(
+    (l) =>
+      mine.some((b) => b.slug === l.businessSlug) && (!selected || l.businessSlug === selected),
   );
   const setStatus = (id: string, status: LaunchStatus) =>
     set((s) => ({
@@ -94,96 +72,38 @@ function Workspace() {
         </Link>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Sample analytics · not measured visitor activity. Outbound clicks ÷ profile visits gives
-        website conversion; no sales are tracked.
+      <div>
+        <label className="block text-xs font-medium">
+          Business selector
+          <select
+            aria-label="Managed business"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+            className="mt-2 w-full max-w-sm rounded-lg border border-input bg-card px-3 py-2.5 text-sm"
+          >
+            <option value="">All your businesses</option>
+            {mine.map((b) => (
+              <option key={b.slug} value={b.slug}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Your browser-preview workspace. Posts and edits stay in this browser. Visitor metrics are
+        not connected.{" "}
+        <Link to="/analytics" className="text-primary">
+          View local analytics →
+        </Link>
       </p>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          ["Profile visits", totals.visits],
-          ["Outbound clicks", totals.clicks],
-          ["Saves", totals.saves],
-          ["Website conversion", `${((totals.clicks / totals.visits) * 100).toFixed(1)}%`],
-        ].map(([l, v]) => (
-          <div key={l as string} className="rounded-2xl border border-border bg-card p-5">
-            <p className="text-sm text-muted-foreground">{l}</p>
-            <p className="mt-2 font-display text-3xl font-semibold">
-              {typeof v === "number" ? v.toLocaleString("en-IN") : v}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <Panel
-          title="Traffic"
-          action={
-            <div className="inline-flex rounded-full bg-muted p-1 text-xs">
-              {(["daily", "weekly", "monthly"] as const).map((r) => (
-                <Button
-                  variant="ghost"
-                  key={r}
-                  onClick={() => setRange(r)}
-                  className={`rounded-full px-3 py-1 capitalize ${range === r ? "bg-card shadow" : ""}`}
-                >
-                  {r === "daily" ? "7 days" : r === "weekly" ? "14 days" : "30 days"}
-                </Button>
-              ))}
-            </div>
-          }
-        >
-          <div className="h-64 min-w-0">
-            <ResponsiveContainer>
-              <AreaChart data={data}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="day" fontSize={11} stroke="var(--muted-foreground)" />
-                <YAxis fontSize={11} stroke="var(--muted-foreground)" />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                  }}
-                />
-                <Area
-                  dataKey="visits"
-                  stroke="var(--primary)"
-                  fill="var(--primary)"
-                  fillOpacity={0.2}
-                />
-                <Area
-                  dataKey="clicks"
-                  stroke="var(--accent)"
-                  fill="var(--accent)"
-                  fillOpacity={0.2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </Panel>
-        <Panel title="Traffic sources">
-          <div className="h-64 min-w-0">
-            <ResponsiveContainer>
-              <BarChart data={trafficSources} layout="vertical">
-                <XAxis type="number" hide />
-                <YAxis
-                  type="category"
-                  dataKey="source"
-                  width={100}
-                  fontSize={11}
-                  stroke="var(--muted-foreground)"
-                />
-                <Bar dataKey="value" fill="var(--primary)" radius={[0, 8, 8, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Panel>
-      </div>
-
       <Panel title="Your launches">
         {visibleLaunches.length === 0 && (
           <p className="text-sm text-muted-foreground">
-            No launches yet. Create a business, then save your first launch draft.
+            No launches yet. Create a business, then save your first launch draft.{" "}
+            <Link to="/dashboard/launch/$id" params={{ id: "new" }} className="text-primary">
+              Create launch
+            </Link>
           </p>
         )}
         <div className="divide-y divide-border">
@@ -253,31 +173,49 @@ function Workspace() {
 
       <Panel title="Your businesses">
         <div className="grid gap-4 md:grid-cols-2">
-          {mine.map((b) => (
-            <div key={b.slug} className="rounded-xl border border-border p-4">
-              <p className="font-display text-lg font-semibold">{b.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {b.products.length}/12 catalog items · ★ {b.rating}
-              </p>
-              <div className="mt-3 flex gap-2 text-sm">
-                <Link
-                  to="/dashboard/business/$slug"
-                  params={{ slug: b.slug }}
-                  className="rounded-full bg-foreground px-3 py-1.5 text-background"
-                >
-                  Manage
-                </Link>
-                <Link
-                  to="/businesses/$slug"
-                  params={{ slug: b.slug }}
-                  className="rounded-full border border-border px-3 py-1.5"
-                >
-                  View public page
-                </Link>
+          {mine
+            .filter((b) => !selected || b.slug === selected)
+            .map((b) => (
+              <div key={b.slug} className="rounded-xl border border-border p-4">
+                <Avatar
+                  photo={b.cover}
+                  initials={b.name.slice(0, 2)}
+                  className="mb-3 aspect-video w-full rounded-lg bg-muted"
+                />
+                <p className="text-base font-semibold">{b.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {b.products.length}/12 catalog items · {b.city}
+                </p>
+                <div className="mt-3 flex gap-2 text-sm">
+                  <Link
+                    to="/dashboard/business/$slug"
+                    params={{ slug: b.slug }}
+                    className="rounded-full bg-foreground px-3 py-1.5 text-background"
+                  >
+                    Manage
+                  </Link>
+                  <Link
+                    to="/businesses/$slug"
+                    params={{ slug: b.slug }}
+                    className="rounded-full border border-border px-3 py-1.5"
+                  >
+                    View public page
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
-          {mine.length === 0 && <p className="text-sm text-muted-foreground">No businesses yet.</p>}
+            ))}
+          {mine.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No businesses yet.{" "}
+              <Link
+                to="/dashboard/business/$slug"
+                params={{ slug: "new" }}
+                className="text-primary"
+              >
+                Add business
+              </Link>
+            </p>
+          )}
         </div>
       </Panel>
     </div>

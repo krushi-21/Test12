@@ -54,7 +54,7 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
   --font-display: "Playfair Display", Georgia, serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -68,25 +68,25 @@
 :root {
   --image-foreground: oklch(1 0 0);
   --overlay: oklch(0.15 0 0);
-  --radius: 0.75rem;
-  --background: oklch(0.97 0.01 75);
-  --foreground: oklch(0.27 0.012 50);
-  --card: oklch(0.99 0.005 75);
+  --radius: 0.5rem;
+  --background: oklch(0.98 0.005 80);
+  --foreground: oklch(0.25 0.008 50);
+  --card: oklch(1 0 0);
   --card-foreground: oklch(0.27 0.012 50);
   --popover: oklch(0.99 0.005 75);
   --popover-foreground: oklch(0.27 0.012 50);
-  --primary: oklch(0.51 0.095 40);
+  --primary: oklch(0.55 0.15 34);
   --primary-foreground: oklch(0.98 0.008 75);
-  --secondary: oklch(0.89 0.03 70);
+  --secondary: oklch(0.95 0.018 40);
   --secondary-foreground: oklch(0.27 0.012 50);
-  --muted: oklch(0.93 0.02 72);
+  --muted: oklch(0.965 0.006 75);
   --muted-foreground: oklch(0.48 0.02 55);
   --accent: oklch(0.5 0.04 130);
   --accent-foreground: oklch(0.98 0.008 75);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.98 0.008 75);
-  --border: oklch(0.87 0.025 70);
-  --input: oklch(0.87 0.025 70);
+  --border: oklch(0.92 0.007 75);
+  --input: oklch(0.9 0.007 75);
   --ring: oklch(0.6 0.095 40);
   --chart-1: oklch(0.6 0.095 40);
   --chart-2: oklch(0.5 0.04 130);
@@ -114,14 +114,214 @@
   }
 }
 
-.cover-shade { background: linear-gradient(to top, oklch(0.15 0 0 / 0.8), oklch(0.15 0 0 / 0.05) 80%); }
+.cover-shade {
+  background: linear-gradient(to top, oklch(0.15 0 0 / 0.8), oklch(0.15 0 0 / 0.05) 80%);
+}
 @layer base {
-  :where(a, button, input, select, textarea):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
-  :where(h1,h2,h3,p,span,a,label) { overflow-wrap: anywhere; letter-spacing: 0; }
-  :where(input, select, textarea) { min-width: 0; max-width: 100%; }
-  :where(button, a) { touch-action: manipulation; }
-  .grid > *, .flex > * { min-width: 0; }
+  :where(a, button, input, select, textarea):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+  :where(h1, h2, h3, p, span, a, label) {
+    overflow-wrap: anywhere;
+    letter-spacing: 0;
+  }
+  :where(input, select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  :where(button, a) {
+    touch-action: manipulation;
+  }
+  .grid > *,
+  .flex > * {
+    min-width: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: 14px 24px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+.app-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 26px;
+  max-width: 1536px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.left-rail {
+  position: sticky;
+  top: 88px;
+  height: calc(100vh - 110px);
+  overflow-y: auto;
+  padding-right: 12px;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+.nav-link:hover {
+  background: var(--muted);
+}
+.nav-active {
+  background: var(--secondary);
+  color: var(--primary);
+  font-weight: 600;
+}
+.app-main {
+  min-width: 0;
+  max-width: 1100px;
+  width: 100%;
+}
+.app-main.with-right {
+  max-width: 780px;
+}
+.right-rail {
+  width: 280px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.sidebar-widget {
+  background: var(--card);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 3px 20px oklch(0.25 0.008 50 / 0.035);
+}
+.shell-footer {
+  padding: 28px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.app-main > .mx-auto,
+.app-main > div > .mx-auto {
+  padding-left: 0;
+  padding-right: 0;
+}
+.app-main .rounded-2xl,
+.app-main .rounded-3xl {
+  border-radius: 8px;
+}
+.app-main .lg\:grid-cols-3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.post-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 3px 20px oklch(0.25 0.008 50 / 0.025);
+}
+.home-cover {
+  position: relative;
+  min-height: 310px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.home-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, oklch(0.2 0.015 40 / 0.82), oklch(0.2 0.015 40 / 0.15));
+}
+@media (min-width: 1200px) {
+  .app-layout:has(.right-rail) {
+    grid-template-columns: 190px minmax(0, 1fr) 280px;
+  }
+}
+@media (min-width: 1440px) {
+  .app-layout {
+    gap: 32px;
+    padding-left: 40px;
+    padding-right: 40px;
+  }
+  .app-layout:has(.right-rail) {
+    grid-template-columns: 190px minmax(0, 1fr) 300px;
+  }
+  .right-rail {
+    width: 300px;
+  }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-layout {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 18px;
+    padding: 20px;
+  }
+  .left-rail {
+    padding: 0;
+  }
+  .nav-link {
+    justify-content: center;
+    padding: 13px 10px;
+  }
+}
+@media (max-width: 1199px) {
+  .right-rail {
+    grid-column: 2;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .app-header {
+    padding: 10px 12px;
+  }
+  .app-layout {
+    display: block;
+    padding: 20px 14px;
+  }
+  .left-rail {
+    display: none;
+  }
+  .right-rail {
+    display: none;
+  }
+  .app-main {
+    max-width: none;
+  }
+  .app-main .lg\:grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+  .mobile-navigation .nav-link span:not(.sr-only) {
+    display: block;
+  }
+  .mobile-navigation .nav-link .sr-only {
+    position: static;
+    width: auto;
+    height: auto;
+    clip: auto;
+    overflow: visible;
+  }
+  .mobile-navigation .nav-link span.hidden {
+    display: none;
+  }
+  .mobile-navigation nav > p {
+    display: block;
+  }
+  .home-cover {
+    min-height: 320px;
+  }
 }

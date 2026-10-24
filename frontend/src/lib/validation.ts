@@ -16,6 +16,19 @@ export function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+export function normalizePhone(value: string | undefined) {
+  if (!value || !/^\+?[\d\s().-]+$/.test(value.trim())) return null;
+  const digits = value.replace(/\D/g, "");
+  if (!/^[1-9]\d{7,14}$/.test(digits)) return null;
+  return value.trim().startsWith("+") ? `+${digits}` : digits;
+}
+
+export function openingStatus(business: { hours: string[]; openNow?: boolean }) {
+  if (!business.hours.some((h) => h.trim()) || typeof business.openNow !== "boolean")
+    return "Hours unavailable";
+  return business.openNow ? "Open now" : "Closed";
+}
+
 export function canReview(
   user: { verified: boolean; founderSlug?: string } | null,
   ownerSlug: string,

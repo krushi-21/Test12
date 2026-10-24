@@ -22,9 +22,16 @@ const icons: Record<Notice["kind"], typeof Bell> = {
 
 function Notifications() {
   const { notifications, set } = useStore();
+  const markRead = (id: string) =>
+    set((s) => ({
+      ...s,
+      notifications: s.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+    }));
   return (
     <>
-      <PageHeading eyebrow="Inbox" title="Notifications" />
+      <PageHeading eyebrow="Inbox" title="Notifications">
+        Sample notifications and read states are stored only in this browser.
+      </PageHeading>
       <div className="mx-auto max-w-3xl px-4">
         <SignedIn what="see notifications">
           <div className="mb-4 flex justify-end">
@@ -45,11 +52,12 @@ function Notifications() {
           </div>
           <ul className="space-y-2">
             {notifications.map((n) => {
-              const Icon = icons[n.kind];
+              const Icon = icons[n.kind] ?? Bell;
               return (
                 <li key={n.id}>
                   <Button
                     variant="ghost"
+                    aria-label={`${n.read ? "Read" : "Unread"}: ${n.text}${n.read ? "" : ". Mark as read"}`}
                     onClick={() =>
                       set((s) => ({
                         ...s,
@@ -61,12 +69,12 @@ function Notifications() {
                     className={`flex h-auto w-full items-center gap-4 whitespace-normal rounded-2xl border p-4 text-left ${n.read ? "border-border bg-card" : "border-primary bg-secondary"}`}
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background text-primary">
-                      <Icon className="h-5 w-5" />
+                      <Icon aria-hidden="true" className="h-5 w-5" />
                     </span>
                     <span className="flex-1">
                       <span className="block text-sm font-medium">{n.text}</span>
                       <span className="text-xs text-muted-foreground">
-                        {formatDate(n.at) + " IST"}
+                        {n.read ? "Read" : "Unread"} · {formatDate(n.at) + " IST"}
                       </span>
                     </span>
                     {!n.read && <span className="h-2 w-2 rounded-full bg-primary" />}
@@ -75,6 +83,7 @@ function Notifications() {
                     <Link
                       to="/launches/$slug"
                       params={{ slug: n.launchSlug }}
+                      onClick={() => markRead(n.id)}
                       className="ml-4 inline-block py-2 text-sm text-primary"
                     >
                       View launch →
@@ -84,6 +93,7 @@ function Notifications() {
                     <Link
                       to="/businesses/$slug"
                       params={{ slug: n.businessSlug }}
+                      onClick={() => markRead(n.id)}
                       className="ml-4 inline-block py-2 text-sm text-primary"
                     >
                       View business →
@@ -93,7 +103,12 @@ function Notifications() {
               );
             })}
             {notifications.length === 0 && (
-              <p className="text-muted-foreground">You're all caught up.</p>
+              <li role="status" className="text-muted-foreground">
+                You're all caught up.{" "}
+                <Link to="/launches" className="text-primary">
+                  Explore launches
+                </Link>
+              </li>
             )}
           </ul>
         </SignedIn>

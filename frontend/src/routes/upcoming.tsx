@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { Bell, BellRing } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeading } from "@/components/site";
@@ -61,7 +62,9 @@ function Upcoming() {
                     {b.name} · {b.city}
                   </p>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  aria-pressed={on}
                   onClick={() => {
                     if (!user) return void toast("Sign in to set reminders");
                     if (!user.verified) return void toast("Verify your email to set reminders");
@@ -74,14 +77,30 @@ function Upcoming() {
                 >
                   {on ? <BellRing className="h-4 w-4" /> : <Bell className="h-4 w-4" />}
                   {on ? "Reminding" : "Remind me"}
-                </button>
+                </Button>
               </li>
             );
           })}
+          {upcoming.length === 0 && (
+            <li role="status">
+              No upcoming launches.{" "}
+              <Link to="/launches" className="text-primary">
+                Explore launches
+              </Link>
+            </li>
+          )}
         </ol>
-        {upcoming.length === 0 && <p>No upcoming launches.</p>}
+
         <aside>
           <h2 className="font-display text-2xl font-semibold">Anniversaries</h2>
+          {anniversaries.length === 0 && (
+            <p role="status" className="mt-4 text-muted-foreground">
+              No anniversaries listed.{" "}
+              <Link to="/launches" className="text-primary">
+                Explore launches
+              </Link>
+            </p>
+          )}
           <ul className="mt-4 space-y-3">
             {anniversaries.map((l) => (
               <li key={l.slug} className="rounded-2xl bg-secondary p-4">

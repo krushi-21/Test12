@@ -35,8 +35,11 @@ function Verify() {
           if (!/^\d{6}$/.test(code))
             return void toast.error("Enter the 6-digit code (any 6 digits in this preview).");
           set((s) => ({ ...s, user: s.user ? { ...s.user, verified: true } : s.user }));
-          notify("Your email is verified — you can now like, save and publish.", "verification");
-          toast.success("Email verified");
+          notify(
+            "Preview account email verification simulated — no email was sent.",
+            "verification",
+          );
+          toast.success("Preview email verification simulated");
           navigate({ to: "/feed" });
         }}
       >

@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 import { toIst } from "./validation";
+import { currentStage } from "./discovery";
 import { businesses, founders, launches, type Business, type Founder, type Launch } from "./demo";
 
 export interface DemoUser {
@@ -56,6 +57,9 @@ export interface Comment {
   author: string;
   text: string;
   at: string;
+  parentId?: string;
+  authorEmail?: string;
+  founderSlug?: string;
 }
 
 export interface State {
@@ -72,9 +76,15 @@ export interface State {
   collections: Collection[];
   notifications: Notice[];
   reviews: Review[];
+  commentLikes: string[];
+  savedPosts: string[];
+  savedCollections: string[];
 }
 
 export const initial: State = {
+  commentLikes: [],
+  savedPosts: [],
+  savedCollections: [],
   businessEdits: [],
   founderEdits: [],
   deletedBusinesses: [],
@@ -148,7 +158,17 @@ interface Ctx extends State {
   signIn: (user: DemoUser) => void;
   storageError: string;
   set: (fn: (s: State) => State) => void;
-  toggle: (field: "follows" | "likes" | "saves" | "reminders", id: string) => void;
+  toggle: (
+    field:
+      | "follows"
+      | "likes"
+      | "saves"
+      | "reminders"
+      | "commentLikes"
+      | "savedPosts"
+      | "savedCollections",
+    id: string,
+  ) => void;
   notify: (text: string, kind?: Notice["kind"]) => void;
 }
 
@@ -252,7 +272,11 @@ export function useDemo() {
   const allLaunches = [
     ...launches.map((l) => {
       const edit = store.ownLaunches.find((x) => x.id === l.slug);
-      return edit ? (edit.status === "published" ? { ...l, ...asLaunch(edit) } : null) : l;
+      return edit
+        ? edit.status === "published"
+          ? { ...l, ...asLaunch(edit) }
+          : null
+        : { ...l, stage: currentStage(l) };
     }),
     ...store.ownLaunches
       .filter((l) => l.status === "published" && !launches.some((x) => x.slug === l.id))

@@ -7,9 +7,14 @@ import { toast } from "sonner";
 import { useStore, useDemo } from "@/lib/store";
 import { CommentSection } from "@/components/comments";
 import { Cover, StageBadge } from "@/components/site";
+import { DetailTabs, Gallery, EmptyState } from "@/components/discovery-ui";
+import { LaunchCard } from "@/components/site";
+import { displayedComments } from "@/lib/activity";
 import { getLaunch } from "@/lib/demo";
 
 export const Route = createFileRoute("/launches_/$slug")({
+  validateSearch: (s: Record<string, unknown>): { tab?: string } =>
+    typeof s["tab"] === "string" ? { tab: s["tab"] } : {},
   loader: ({ params }) => {
     const launch = getLaunch(params.slug);
     return { launch };
@@ -65,7 +70,9 @@ function Countdown({ to }: { to: string }) {
 
 function LaunchDetail() {
   const { slug } = Route.useParams();
-  const { getLaunch, getBusiness, getFounder } = useDemo();
+  const { getLaunch, getBusiness, getFounder, launches } = useDemo();
+  const { tab = "Comments" } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const launch = getLaunch(slug);
   const b = launch ? getBusiness(launch.businessSlug) : undefined;
   const f = b ? getFounder(b.founderSlug) : undefined;
@@ -94,27 +101,20 @@ function LaunchDetail() {
       <Link to="/launches" className="text-sm text-muted-foreground hover:text-primary">
         ← All launches
       </Link>
-      <Cover hue={b.hue} src={b.cover} label={b.name} className="mt-4 h-64 md:h-80" />
-      {ownLaunches.find((l) => l.id === slug)?.images.length ? (
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {ownLaunches
-            .find((l) => l.id === slug)
-            ?.images.map((image) => (
-              <img
-                key={image.url}
-                src={image.url}
-                alt={image.alt}
-                width={1280}
-                height={720}
-                className="aspect-video w-full rounded-lg object-cover"
-              />
-            ))}
-        </div>
-      ) : null}
-      <div className="mt-8 grid gap-10 md:grid-cols-[2fr_1fr]">
+      <Gallery
+        images={
+          ownLaunches.find((l) => l.id === slug)?.images.length
+            ? (ownLaunches.find((l) => l.id === slug)?.images ?? [])
+            : b.cover
+              ? [{ url: b.cover, alt: b.name }]
+              : []
+        }
+        label={launch.title}
+      />
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_260px]">
         <div>
           <StageBadge stage={launch.stage} />
-          <h1 className="mt-3 font-display text-4xl font-semibold md:text-5xl">{launch.title}</h1>
+          <h1 className="mt-3 font-display text-3xl font-semibold">{launch.title}</h1>
           <p className="mt-4 text-lg text-muted-foreground">{launch.summary}</p>
           <div className="mt-6">
             <Countdown to={launch.startsAt} />
@@ -122,13 +122,16 @@ function LaunchDetail() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Button
               variant="ghost"
+              aria-pressed={liked}
+              aria-label={`${liked ? 1 : 0} preview likes`}
               onClick={gate(() => toggle("likes", launch.slug))}
               className={`rounded-full px-5 py-2.5 text-sm font-medium ${liked ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}
             >
-              ♥ {launch.likes + (liked ? 1 : 0)}
+              ♥ {liked ? 1 : 0} · Preview
             </Button>
             <Button
               variant="ghost"
+              aria-pressed={saved}
               onClick={gate(() => toggle("saves", launch.slug))}
               className={`rounded-full px-5 py-2.5 text-sm font-medium ${saved ? "bg-accent text-accent-foreground" : "border border-border bg-card"}`}
             >
@@ -137,6 +140,7 @@ function LaunchDetail() {
             {launch.stage === "Coming Soon" && (
               <Button
                 variant="ghost"
+                aria-pressed={reminding}
                 onClick={gate(() => {
                   toggle("reminders", launch.slug);
                   if (!reminding) notify(`Reminder set for ${launch.title}`, "launch");
@@ -166,7 +170,51 @@ function LaunchDetail() {
               </a>
             )}
           </div>
-          <CommentSection launchSlug={launch.slug} total={launch.comments} />
+          <div className="mt-6">
+            <DetailTabs
+              items={["About", "Updates", "Photos", "Comments"]}
+              value={tab}
+              onChange={(tab) => void navigate({ search: { tab }, replace: true })}
+            />
+            {tab === "Comments" && (
+              <CommentSection launchSlug={launch.slug} ownerSlug={b.founderSlug} />
+            )}
+            {tab === "About" && (
+              <section>
+                <h2 className="mb-3 text-base font-semibold">About this launch</h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">{launch.summary}</p>
+                <p className="mt-3 text-sm">{b.description}</p>
+              </section>
+            )}
+            {tab === "Photos" && (
+              <Gallery
+                images={
+                  ownLaunches.find((l) => l.id === slug)?.images.length
+                    ? (ownLaunches.find((l) => l.id === slug)?.images ?? [])
+                    : b.cover
+                      ? [{ url: b.cover, alt: b.name }]
+                      : []
+                }
+                label={`${launch.title} photos`}
+              />
+            )}
+            {tab === "Updates" && (
+              <EmptyState title="No additional updates yet">
+                The launch announcement is the latest available story.
+              </EmptyState>
+            )}
+          </div>
+          <section className="mt-8">
+            <h2 className="mb-4 text-base font-semibold">More to discover</h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {launches
+                .filter((l) => l.slug !== slug)
+                .slice(0, 2)
+                .map((l) => (
+                  <LaunchCard key={l.slug} launch={l} />
+                ))}
+            </div>
+          </section>
         </div>
         <aside className="space-y-4">
           {user?.verified && collections.length > 0 && (

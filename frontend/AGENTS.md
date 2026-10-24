@@ -15,3 +15,6 @@
 - Keep preview image processing, URL/date validation, sharing, and unsaved-navigation handling in focused browser-safe helpers; persisted previews use compressed data URLs because blob URLs break on reload.
 - Keep production indexing and production service claims disabled during the fixture-only phase; enable them only alongside verified production data.
 - Use the canonical `/saved` route for saved businesses and launches; saved business IDs are namespaced so they cannot collide with launch slugs.
+- Derive displayed community activity and counts through the shared browser-safe activity helper using demo fixtures and local state, so cards and details never disagree or fabricate engagement.
+- Render all page content through the shared AppShell with responsive navigation and contextual right widgets; preserve canonical URLs and add separate routes only for distinct Explore, Following and Analytics experiences.
+- Reuse PostCard and CommentSection for feed and detail conversations; thread relationships and likes live in the demo store, while post, launch, business and collection saves use distinct identifiers to avoid conflating entities.

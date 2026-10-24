@@ -11,10 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
+import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as BusinessesRouteImport } from './routes/businesses'
 import { Route as CollectionsRouteImport } from './routes/collections'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as FeedRouteImport } from './routes/feed'
+import { Route as FollowingRouteImport } from './routes/following'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FoundersRouteImport } from './routes/founders'
 import { Route as LaunchesRouteImport } from './routes/launches'
@@ -44,6 +47,11 @@ const AccountRoute = AccountRouteImport.update({
   path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AnalyticsRoute = AnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BusinessesRoute = BusinessesRouteImport.update({
   id: '/businesses',
   path: '/businesses',
@@ -59,9 +67,19 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FeedRoute = FeedRouteImport.update({
   id: '/feed',
   path: '/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FollowingRoute = FollowingRouteImport.update({
+  id: '/following',
+  path: '/following',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
@@ -158,10 +176,13 @@ const DashboardLaunchIdRoute = DashboardLaunchIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/analytics': typeof AnalyticsRoute
   '/businesses': typeof BusinessesRoute
   '/collections': typeof CollectionsRoute
   '/dashboard': typeof DashboardRoute
+  '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
+  '/following': typeof FollowingRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/founders': typeof FoundersRoute
   '/launches': typeof LaunchesRoute
@@ -184,10 +205,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/analytics': typeof AnalyticsRoute
   '/businesses': typeof BusinessesRoute
   '/collections': typeof CollectionsRoute
   '/dashboard': typeof DashboardRoute
+  '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
+  '/following': typeof FollowingRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/founders': typeof FoundersRoute
   '/launches': typeof LaunchesRoute
@@ -211,10 +235,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
+  '/analytics': typeof AnalyticsRoute
   '/businesses': typeof BusinessesRoute
   '/collections': typeof CollectionsRoute
   '/dashboard': typeof DashboardRoute
+  '/explore': typeof ExploreRoute
   '/feed': typeof FeedRoute
+  '/following': typeof FollowingRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/founders': typeof FoundersRoute
   '/launches': typeof LaunchesRoute
@@ -239,10 +266,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/account'
+    | '/analytics'
     | '/businesses'
     | '/collections'
     | '/dashboard'
+    | '/explore'
     | '/feed'
+    | '/following'
     | '/forgot-password'
     | '/founders'
     | '/launches'
@@ -265,10 +295,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
+    | '/analytics'
     | '/businesses'
     | '/collections'
     | '/dashboard'
+    | '/explore'
     | '/feed'
+    | '/following'
     | '/forgot-password'
     | '/founders'
     | '/launches'
@@ -291,10 +324,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/account'
+    | '/analytics'
     | '/businesses'
     | '/collections'
     | '/dashboard'
+    | '/explore'
     | '/feed'
+    | '/following'
     | '/forgot-password'
     | '/founders'
     | '/launches'
@@ -318,10 +354,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
+  AnalyticsRoute: typeof AnalyticsRoute
   BusinessesRoute: typeof BusinessesRoute
   CollectionsRoute: typeof CollectionsRoute
   DashboardRoute: typeof DashboardRoute
+  ExploreRoute: typeof ExploreRoute
   FeedRoute: typeof FeedRoute
+  FollowingRoute: typeof FollowingRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   FoundersRoute: typeof FoundersRoute
   LaunchesRoute: typeof LaunchesRoute
@@ -358,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/analytics': {
+      id: '/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/businesses': {
       id: '/businesses'
       path: '/businesses'
@@ -379,11 +425,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/feed': {
       id: '/feed'
       path: '/feed'
       fullPath: '/feed'
       preLoaderRoute: typeof FeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/following': {
+      id: '/following'
+      path: '/following'
+      fullPath: '/following'
+      preLoaderRoute: typeof FollowingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/forgot-password': {
@@ -518,10 +578,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
+  AnalyticsRoute: AnalyticsRoute,
   BusinessesRoute: BusinessesRoute,
   CollectionsRoute: CollectionsRoute,
   DashboardRoute: DashboardRoute,
+  ExploreRoute: ExploreRoute,
   FeedRoute: FeedRoute,
+  FollowingRoute: FollowingRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   FoundersRoute: FoundersRoute,
   LaunchesRoute: LaunchesRoute,

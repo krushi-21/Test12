@@ -1,74 +1,149 @@
-import { useDemo } from "@/lib/store";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { LaunchCard, PageHeading } from "@/components/site";
-import { type Stage } from "@/lib/demo";
-
+import { useDemo, useStore } from "@/lib/store";
+import { PageHeading, LaunchCard } from "@/components/site";
+import { DetailTabs, SearchField, EmptyState } from "@/components/discovery-ui";
+import { inputCls } from "@/components/bits";
+import { categories, cities, type Stage } from "@/lib/demo";
+import { isLaunching } from "@/lib/discovery";
+import { seo } from "@/lib/seo";
+const stages: Stage[] = ["Coming Soon", "Launching Today", "Live", "Trending", "Established"];
 export const Route = createFileRoute("/launches")({
-  head: () => ({
-    meta: [
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { title: "Launches — Naviraa" },
-      {
-        name: "description",
-        content:
-          "New products, services and businesses launching across India, from coming soon to established.",
-      },
-      { property: "og:title", content: "Launches — Naviraa" },
-      {
-        property: "og:description",
-        content: "New products, services and businesses launching across India.",
-      },
-    ],
+  validateSearch: (
+    s: Record<string, unknown>,
+  ): {
+    stage?: Stage | undefined;
+    q?: string;
+    city?: string;
+    category?: string;
+    view?: string;
+  } => ({
+    ...(stages.includes(s["stage"] as Stage) ? { stage: s["stage"] as Stage } : {}),
+    ...(typeof s["q"] === "string" ? { q: s["q"] } : {}),
+    ...(typeof s["city"] === "string" ? { city: s["city"] } : {}),
+    ...(typeof s["category"] === "string" ? { category: s["category"] } : {}),
+    ...(typeof s["view"] === "string" ? { view: s["view"] } : {}),
   }),
+  head: () => seo("Launches", "Discover upcoming, live and new launches from India’s founders."),
   component: Launches,
 });
-
-const stages: (Stage | "All")[] = [
-  "All",
-  "Coming Soon",
-  "Launching Today",
-  "Live",
-  "Trending",
-  "Established",
-];
-
 function Launches() {
-  const { businesses, founders, launches } = useDemo();
-  const [stage, setStage] = useState<Stage | "All">("All");
-  const list = stage === "All" ? launches : launches.filter((l) => l.stage === stage);
+  const { launches, getBusiness } = useDemo();
+  const { likes } = useStore();
+  const s = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { q = "", stage, city = "", category = "", view = "Newest" } = s;
+  const update = (v: Partial<typeof s>) =>
+    void navigate({ search: (p) => ({ ...p, ...v }), replace: true });
+  const list = launches
+    .filter((l) => {
+      const b = getBusiness(l.businessSlug);
+      return (
+        b &&
+        `${l.title} ${l.summary} ${b.name}`.toLowerCase().includes(q.toLowerCase()) &&
+        (!stage || l.stage === stage) &&
+        (!city || b.city === city) &&
+        (!category || b.category === category) &&
+        (view !== "Launching Now" || isLaunching(l)) &&
+        (view !== "Upcoming" || l.stage === "Coming Soon")
+      );
+    })
+    .sort((a, b) =>
+      view === "Most Popular"
+        ? Number(likes.includes(b.slug)) - Number(likes.includes(a.slug)) ||
+          b.startsAt.localeCompare(a.startsAt)
+        : b.startsAt.localeCompare(a.startsAt),
+    );
   return (
     <>
-      <PageHeading eyebrow="Launches" title="Fresh from Indian founders">
-        Follow every launch from the countdown to its anniversary.
+      <PageHeading eyebrow="Launch directory" title="Launches">
+        New ideas, independent makers, and their next big moment.
       </PageHeading>
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/upcoming"
-            className="mr-2 rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary"
-          >
-            Calendar & reminders →
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_220px]">
+        <div>
+          <DetailTabs
+            items={["Launching Now", "Upcoming", "Newest", "Most Popular"]}
+            value={view}
+            onChange={(view) => update({ view })}
+          />
+          {view === "Most Popular" && (
+            <p className="mb-4 text-xs text-muted-foreground">
+              Sorted by likes created in this browser, then newest. No platform-wide popularity
+              data.
+            </p>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {list.map((l) => (
+              <LaunchCard key={l.slug} launch={l} />
+            ))}
+          </div>
+          {!list.length && (
+            <EmptyState
+              title="No launches match these filters"
+              action={
+                <Link to="/launches" search={{}} className="text-primary">
+                  Clear filters
+                </Link>
+              }
+            />
+          )}
+          <Link to="/upcoming" className="mt-6 inline-block text-xs text-primary">
+            Launch calendar & reminders →
           </Link>
-          {stages.map((s) => (
-            <button
-              key={s}
-              onClick={() => setStage(s)}
-              className={`rounded-full px-4 py-2 text-sm font-medium ${stage === s ? "bg-foreground text-background" : "bg-card text-muted-foreground hover:text-foreground"}`}
+        </div>
+        <aside className="h-fit space-y-5 rounded-lg bg-card p-5">
+          <h2 className="text-sm font-semibold">Filters</h2>
+          <SearchField
+            label="Search launches"
+            value={q}
+            onChange={(q) => update({ q })}
+            placeholder="Search launches…"
+          />
+          <label className="block space-y-2 text-xs">
+            Category
+            <select
+              value={category}
+              onChange={(e) => update({ category: e.target.value })}
+              className={inputCls}
             >
-              {s}
-            </button>
-          ))}
-        </div>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((l) => (
-            <LaunchCard key={l.slug} launch={l} />
-          ))}
-        </div>
-        {list.length === 0 && (
-          <p className="mt-8 text-muted-foreground">No launches in this stage yet.</p>
-        )}
+              <option value="">All categories</option>
+              {categories.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-2 text-xs">
+            Location
+            <select
+              value={city}
+              onChange={(e) => update({ city: e.target.value })}
+              className={inputCls}
+            >
+              <option value="">All cities</option>
+              {cities.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-2 text-xs">
+            Launch status
+            <select
+              aria-label="Launch status"
+              value={stage ?? ""}
+              onChange={(e) =>
+                update(e.target.value ? { stage: e.target.value as Stage } : { stage: undefined })
+              }
+              className={inputCls}
+            >
+              <option value="">All statuses</option>
+              {stages.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <Link to="/launches" search={{}} className="inline-block text-xs text-primary">
+            Clear filters
+          </Link>
+        </aside>
       </div>
     </>
   );

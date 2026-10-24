@@ -1,13 +1,17 @@
 import { useDemo } from "@/lib/store";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { PageHeading } from "@/components/site";
-import { cityCentres, coords } from "@/lib/demo";
+import { categories, cityCentres, coords } from "@/lib/demo";
 import { seo } from "@/lib/seo";
 
 export const Route = createFileRoute("/map")({
   head: () =>
-    seo("Map", "See Naviraa businesses on a map of India using owner-supplied locations."),
+    seo(
+      "Approximate business map",
+      "Explore approximate business locations in the Naviraa preview.",
+    ),
   component: MapView,
 });
 
@@ -34,6 +38,7 @@ const project = (
 function MapView() {
   const { businesses } = useDemo();
   const [city, setCity] = useState("");
+  const [category, setCategory] = useState("");
   const [active, setActive] = useState<string | null>(null);
   const centre = cityCentres[city];
   const zoom = centre ? { c: centre, span: 1.5 } : null;
@@ -43,15 +48,23 @@ function MapView() {
       locations[b.slug] = [b.latitude, b.longitude];
   });
   const shown = businesses
-    .filter((b) => (!city || b.city === city) && b.mode !== "online")
+    .filter(
+      (b) =>
+        (!city || b.city === city) && (!category || b.category === category) && b.mode !== "online",
+    )
     .filter((b) => locations[b.slug]);
   const sel = businesses.find((b) => b.slug === active);
 
   return (
     <>
-      <PageHeading eyebrow="Map" title="Businesses near a city">
-        Locations come from business owners. We never ask for your device location.
+      <PageHeading eyebrow="Map" title="Approximate business map">
+        Positions are approximate on this schematic, not street-level directions. Online-only
+        businesses are not shown.
       </PageHeading>
+      <div className="mx-auto max-w-6xl px-4 pb-4 text-xs text-muted-foreground">
+        <span className="text-primary">★</span> Business · Selected markers use a dark fill · No
+        device location is requested
+      </div>
       <div className="mx-auto grid max-w-6xl gap-6 px-4 lg:grid-cols-[1fr_320px]">
         <div className="relative aspect-square overflow-hidden rounded-3xl border border-border bg-secondary md:aspect-[4/3]">
           <svg className="absolute inset-0 h-full w-full text-border" aria-hidden="true">
@@ -95,19 +108,35 @@ function MapView() {
             const p = project(coordinates, zoom);
             if (p.x < 0 || p.x > 100 || p.y < 0 || p.y > 100) return null;
             return (
-              <button
+              <Button
+                variant="ghost"
                 key={b.slug}
                 onClick={() => setActive(b.slug)}
-                aria-label={b.name}
+                aria-label={`Map marker: ${b.name}`}
+                aria-pressed={active === b.slug}
                 className={`absolute -translate-x-1/2 -translate-y-full rounded-t-full px-2 pb-1 pt-2 text-xs font-semibold shadow-md transition ${active === b.slug ? "bg-foreground text-background" : "bg-primary text-primary-foreground hover:scale-110"}`}
                 style={{ left: `${p.x}%`, top: `${p.y}%` }}
               >
-                ★
-              </button>
+                <span aria-hidden="true">★</span>
+              </Button>
             );
           })}
         </div>
         <aside className="space-y-4">
+          <select
+            aria-label="Map category"
+            value={category}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setActive(null);
+            }}
+            className="w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm"
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c}>{c}</option>
+            ))}
+          </select>
           <select
             aria-label="Map city"
             value={city}
@@ -140,17 +169,27 @@ function MapView() {
           ) : (
             <p className="text-sm text-muted-foreground">Tap a marker to see the business.</p>
           )}
-          {shown.length === 0 && <p>No mapped businesses in this city.</p>}
+          {shown.length === 0 && (
+            <p role="status">
+              No physical or hybrid businesses with locations {city ? "in this city" : "listed yet"}
+              .{" "}
+              <Link to="/businesses" search={city ? { city } : {}} className="text-primary">
+                Browse businesses
+              </Link>
+            </p>
+          )}
           <ul className="space-y-2">
             {shown.map((b) => (
               <li key={b.slug}>
-                <button
+                <Button
+                  variant="ghost"
                   onClick={() => setActive(b.slug)}
-                  className="w-full rounded-xl bg-card px-4 py-3 text-left text-sm hover:bg-muted"
+                  aria-pressed={active === b.slug}
+                  className={`h-auto w-full justify-start whitespace-normal rounded-xl px-4 py-3 text-left text-sm ${active === b.slug ? "bg-secondary" : "bg-card hover:bg-muted"}`}
                 >
                   <span className="font-medium">{b.name}</span>{" "}
                   <span className="text-muted-foreground">· {b.city}</span>
-                </button>
+                </Button>
               </li>
             ))}
           </ul>
